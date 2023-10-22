@@ -1,1 +1,2 @@
-# This repository contains the source code of Quick Language Transpiler (QLT).
+# Quick Language Transpiler (QLT).
+### This repository contains the source code of QLT
