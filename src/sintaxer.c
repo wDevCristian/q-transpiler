@@ -3,7 +3,7 @@
  * @file sintaxer.c
  * @author Gurduza Cristian
  * @date 24.10.2023
-*/
+ */
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -12,16 +12,16 @@
 
 #include "lexer.h"
 
-/** short version of @code unsigned short int @endcode */ 
+/** short version of @code unsigned short int @endcode */
 #define USINT unsigned short int;
 
-int iTk;		 // the iterator in tokens
+int iTk = 0;	 // the iterator in tokens
 Token *consumed; // the last consumed token
 
 /* Declaration of all functions used in program() */
 
 bool factor();
-bool exprPrefix(); 
+bool exprPrefix();
 bool exprMul();
 bool exprAdd();
 bool exprComp();
@@ -40,8 +40,8 @@ bool program();
 /**
  * @brief same as err, but also prints the line of the current token
  * @param[in] *fmt format of the error message @code "%s" @endcode
- * @param[in] ... unlimited number of error messages
-*/
+ * @param[in] ... variable number of error messages
+ */
 _Noreturn void tkerr(const char *fmt, ...)
 {
 	fprintf(stderr, "error in line %d: ", tokens[iTk].line);
@@ -57,7 +57,7 @@ _Noreturn void tkerr(const char *fmt, ...)
  * @brief Consume atoms based on their atoms code
  * @see enum atoms
  * @param[in] code code of atom
-*/
+ */
 bool consume(int code)
 {
 	if (tokens[iTk].code == code)
@@ -71,7 +71,7 @@ bool consume(int code)
 /**
  * @brief Starts the syntactic analyser
  * @note Call this function to start SA
-*/
+ */
 void parse()
 {
 	iTk = 0;
@@ -84,7 +84,7 @@ void parse()
 
 /**
  * @brief program ::= ( defVar | defFunc | block )* FINISH
-*/
+ */
 bool program()
 {
 	for (;;)
@@ -92,12 +92,12 @@ bool program()
 		if (defVar())
 		{
 		}
-		else if (defFunc())
-		{
-		}
-		else if (block())
-		{
-		}
+		// else if (defFunc())
+		// {
+		// }
+		// else if (block())
+		// {
+		// }
 		else
 			break;
 	}
@@ -112,39 +112,80 @@ bool program()
 
 /**
  * @brief defVar ::= VAR ID COLON baseType SEMICOLON
-*/
-bool defVar() {
+ */
+bool defVar()
+{
 	int start = iTk;
-	if (consume(VAR)) {
-		if (consume(ID)) {
-			if (consume(COLON)) {
-				if (baseType()) {
-					if (consume(SEMICOLON)){
+	if (consume(VAR))
+	{
+		if (consume(ID))
+		{
+			if (consume(COLON))
+			{
+				if (baseType())
+				{
+					if (consume(SEMICOLON))
+					{
 						return true;
 					}
+					else
+					{
+						printf("iTk = %d\n", iTk);
+						tkerr("missing token ';'\n");
+					}
+				}
+				else
+				{
+					printf("iTk = %d\n", iTk);
+					tkerr("missing base type\n");
 				}
 			}
+			else
+			{
+				printf("iTk = %d\n", iTk);
+				tkerr("missing token ':'\n");
+			}
+		}
+		else
+		{
+			printf("iTk = %d\n", iTk);
+			tkerr("missing id\n");
 		}
 	}
+	else
+	{
+		printf("iTk = %d\n", iTk);
+		// tkerr("missing token 'var'\n");
+		// TODO: find a way to write about the first token error on defVar, defFunc and block 
+	}
 
-	iTk = start; 
-	return false; 
+	iTk = start;
+	return false;
 }
 
 /**
  * @brief baseType ::= TYPE_INT | TYPE_REAL | TYPE_STR
-*/
-bool baseType() {
-	int start = iTk;  // Detailed description after the member
-	if (consume(TYPE_INT)) {
-		return true; 
-	} else if (consume(TYPE_REAL)) {
+ */
+bool baseType()
+{
+	int start = iTk; // Detailed description after the member
+	if (consume(TYPE_INT))
+	{
 		return true;
-	} else if (consume(TYPE_STR)) {
-		return true; 
-	} else {
-		iTk = start; 
-		return false; 
+	}
+	else if (consume(TYPE_REAL))
+	{
+		return true;
+	}
+	else if (consume(TYPE_STR))
+	{
+		return true;
+	}
+	else
+	{
+		iTk = start;
+		tkerr("inexistent type of data\n");
+		return false;
 	}
 }
 
@@ -183,3 +224,4 @@ bool baseType() {
  * @note Something to note.
  * @warning Warning.
  */
+void f();
