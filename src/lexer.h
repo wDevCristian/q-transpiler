@@ -2,7 +2,7 @@
 
 // De adaugat in enum id cuvintelor cheie
 
-enum
+enum Atoms
 {
 	ID, 
 
