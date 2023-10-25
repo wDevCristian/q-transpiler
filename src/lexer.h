@@ -49,6 +49,43 @@ enum Atoms
 	// 
 };
 
+#define ATOMS_CODE_NAME (const char*[]){  			\
+	"ID",  											\
+	"VAR", 											\
+	"FUNCTION",										\
+	"IF",											\
+	"ELSE",											\
+	"WHILE",										\
+	"END",											\
+	"RETURN",										\
+	"TYPE_INT",										\
+	"TYPE_REAL",									\
+	"TYPE_STR",										\
+	"INT",											\			
+	"REAL",											\
+	"STR",											\
+	"COMMA",										\		
+	"COLON",										\
+	"SEMICOLON",									\
+	"LPAR",											\
+	"RPAR",											\
+	"FINISH",										\
+	"ADD",											\
+	"SUB",											\
+	"MUL",											\
+	"DIV",											\
+	"AND",											\
+	"OR",											\
+	"NOT",											\	
+	"ASSIGN",										\
+	"EQUAL",										\
+	"NOTEQ",										\
+	"LESS",											\
+	"LESSEQ",										\
+	"GREATER",										\
+	"GREATERQ"										\	
+}			
+
 #define MAX_STR 127
 
 typedef struct

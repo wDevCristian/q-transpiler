@@ -3,6 +3,7 @@
  * @file sintaxer.c
  * @author Gurduza Cristian
  * @date 24.10.2023
+ * @ref https://github.com/wDevCristian/q-transpiler "src code:"
  */
 
 #include <stdbool.h>
@@ -60,11 +61,14 @@ _Noreturn void tkerr(const char *fmt, ...)
  */
 bool consume(int code)
 {
+	printf("consume(%s)", ATOMS_CODE_NAME[code]);
 	if (tokens[iTk].code == code)
 	{
 		consumed = &tokens[iTk++];
+		printf(" => consumed\n");
 		return true;
 	}
+	printf(" => found %s\n", ATOMS_CODE_NAME[tokens[iTk].code]);
 	return false;
 }
 
@@ -91,6 +95,10 @@ bool program()
 	{
 		if (defVar())
 		{
+			if (consume(FINISH))
+			{
+				return true;
+			}
 		}
 		// else if (defFunc())
 		// {
@@ -103,7 +111,7 @@ bool program()
 	}
 	if (consume(FINISH))
 	{
-		return false;
+		return true;
 	}
 	else
 		tkerr("syntax error");
@@ -155,12 +163,67 @@ bool defVar()
 	else
 	{
 		printf("iTk = %d\n", iTk);
-		// tkerr("missing token 'var'\n");
+		tkerr("missing token 'var'\n");
 		// TODO: find a way to write about the first token error on defVar, defFunc and block 
 	}
 
 	iTk = start;
 	return false;
+}
+
+/**
+ * @brief defFunc ::= FUNCTION ID LPAR funcParams? RPAR COLON baseType defVar* block END
+*/
+bool defFunc() {
+	int start = iTk; 
+
+	if (consume(FUNCTION)) {
+		if (consume(ID)) {
+			if (consume(LPAR)) {
+				if (funcParams()) {
+
+				}
+				if (consume(RPAR)) {
+					if (consume(COLON)) {
+						if (baseType()) {
+							while (true) {
+								if (defVar()) {
+
+								}
+							}
+							if (block()) {
+								if (consume(END)) {
+									return true;
+								}
+							}
+						}
+ 					}
+				}
+			}
+		}
+	}
+
+	iTk = start; 
+	return false; 
+}
+
+/**
+ * @brief block ::= instr+
+*/
+bool block() {
+	int start = iTk; 
+
+	do
+	{
+		if (instr()) {
+
+		}
+	} while (true);
+	
+	
+	
+	iTk = start; 
+	return false; 
 }
 
 /**
@@ -188,6 +251,286 @@ bool baseType()
 		return false;
 	}
 }
+
+
+/**
+ * @brief funcParams ::= funcParam ( COMMA funcParam )*
+*/
+bool funcParams() {
+	int start = iTk; 
+
+	if (funcParam()) {
+		while (consume(COMMA)) {
+			if (funcParam()) {
+				return true;
+			}
+		}
+	}
+
+	iTk = start; 
+	return false;
+}
+
+/**
+ * @brief funcParam ::= ID COLON baseType
+*/
+bool funcParam() {
+	int start = iTk; 
+
+	if (consume(ID)) {
+		if (consume(COLON)) {
+			if (baseType()) {
+				return true; 
+			}
+		}
+	}
+
+	iTk = start; 
+	return false;
+}
+
+/**
+ * instr ::= expr? SEMICOLON
+ *		| IF LPAR expr RPAR block ( ELSE block )? END
+ *		| RETURN expr SEMICOLON
+ *		| WHILE LPAR expr RPAR block END
+*/
+bool instr() {
+	int start = iTk; 
+
+	if (expr()) {
+	
+	}
+	if (consume(SEMICOLON)) {
+		if (consume(IF)) {
+			if (consume(LPAR)) {
+				if (expr()) {
+					if (consume(RPAR)) {
+						if (block()) {
+							
+						}
+						if (consume(ELSE)) {
+							if (block()) {
+								if (consume(END)) {
+									return true; 
+								}
+							}
+						}
+						if (consume(END)) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if (consume(RETURN)) {
+		if (expr()) {
+			if (consume(SEMICOLON)) {
+				return true;
+			}
+		}
+	}
+
+	if (consume(WHILE)) {
+		if (consume(LPAR)) {
+			if (expr()) {
+				if (consume(RPAR)) {
+					if (block()) {
+						if (consume(END)) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	iTk = start; 
+	return false;
+}
+
+/**
+ * @brief expr ::= exprLogic
+*/
+bool expr() {
+	int start = iTk; 
+
+	if (exprLogic()) {
+		return true;
+	}
+
+	iTk = start; 
+	return false;
+}
+
+/**
+ * @brief exprLogic ::= exprAssign ( ( AND | OR ) exprAssign )*
+*/
+bool exprLogic() {
+	int start = iTk; 
+
+	if (exprAssign()) {
+		while (consume(AND) || consume(OR)) {
+			if (exprAssign()){
+				// return true;
+			}
+		}
+	}
+
+	iTk = start; 
+	return false;
+}
+
+
+/**
+ * @brief exprAssign ::= ( ID ASSIGN )? exprComp
+*/
+bool exprAssign() {
+	int start = iTk; 
+
+	if (consume(ID)) {
+		if (consume(ASSIGN)) {
+			if (exprComp()) {
+				return true; 
+			}
+		}
+	}
+
+	if (exprComp()) {
+		return true;
+	}
+	
+	iTk = start; 
+	return false;
+}
+
+/**
+ * @brief exprComp ::= exprAdd ( ( LESS | EQUAL ) exprAdd )?
+*/
+bool exprComp() {
+	int start = iTk; 
+
+	if (exprAdd()) {
+		if (consume(LESS) || consume(EQUAL)) {
+			if (exprAdd()) {
+				return true;
+			}
+		}
+
+		return true;
+	}
+
+	iTk = start; 
+	return false;
+}
+
+/**
+ * @brief exprAdd ::= exprMul ( ( ADD | SUB ) exprMul )*
+*/
+bool exprAdd() {
+	int start = iTk; 
+
+	if (exprMul()) {
+		while (consume(ADD) || consume(SUB)) {
+			if (exprMul()) {
+				// return true;
+			}
+		}
+
+		return true;
+	}
+
+	iTk = start; 
+	return false;
+}
+
+/**
+ * @brief exprMul ::= exprPrefix ( ( MUL | DIV ) exprPrefix )*
+*/
+bool exprMul() {
+	int start = iTk; 
+
+	if (exprPrefix()) {
+		while (consume(MUL) || consume(DIV)){
+			if (exprPrefix) {
+				// return true; 
+			}
+		}
+
+		return true;
+	}
+
+	iTk = start; 
+	return false;
+}
+
+
+/**
+ * @brief exprPrefix ::= (SUB | NOT)? factor
+*/
+bool exprPrefix() {
+	int start = iTk; 
+
+	if (consume(SUB) || consume(NOT)) {
+		if (factor()) {
+			return true;
+		}
+	}
+
+	if (factor()) {
+		return true;
+	}
+
+	iTk = start; 
+	return false;
+}
+
+
+/**
+ * factor ::= INT
+| REAL
+| STR
+| LPAR expr RPAR
+| ID ( LPAR ( expr ( COMMA expr )* )? RPAR )?
+*/
+bool factor() {
+	int start = iTk; 
+
+	if (consume(INT) || consume(REAL) || consume(STR)) {
+		return true; 
+	}
+
+	if (consume(LPAR)) {
+		if (expr()) {
+			if (consume(RPAR)) {
+				return true; 
+			}
+		}
+	}
+
+	if (consume(ID)) {
+		if (consume(LPAR)) {
+			if(expr()) {
+				while (consume(COMMA)) {
+					if (expr()) {
+						// return true;
+					}
+				}
+			}
+			if (consume(RPAR)) {
+				return true;
+			}
+		}
+
+		return true;
+	}
+	
+	iTk = start; 
+	return false;
+}
+
 
 // This is a cheatsheet for doxygen
 
@@ -224,4 +567,4 @@ bool baseType()
  * @note Something to note.
  * @warning Warning.
  */
-void f();
+void func();
