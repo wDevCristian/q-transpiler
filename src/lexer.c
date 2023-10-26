@@ -162,7 +162,7 @@ void tokenize(const char *pch)
 			{
 				for (start = pch++; isalnum(*pch) || *pch == '_'; pch++);
 				char *text = copyn(buf, start, pch);
-				if (strcmp(text, "int") == 0)
+				if (strcmp(text, "int") == 0) /**< Could implement The Knuth-Morris-Pratt algorithm for finding small lexical error when writing predefined identifiers, like itn -> int*/
 					addTk(TYPE_INT);
 				else if(strcmp(text, "real") == 0) {
 					addTk(TYPE_REAL);

@@ -1,3 +1,5 @@
 *.o
 build 
 .vscode
+test-src.q
+*.log

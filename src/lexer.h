@@ -49,6 +49,9 @@ enum Atoms
 	// 
 };
 
+/**
+ * @brief get atoms code name as a STRING by it's code
+*/
 #define ATOMS_CODE_NAME (const char*[]){  			\
 	"ID",  											\
 	"VAR", 											\
@@ -61,10 +64,10 @@ enum Atoms
 	"TYPE_INT",										\
 	"TYPE_REAL",									\
 	"TYPE_STR",										\
-	"INT",											\			
+	"INT",											\
 	"REAL",											\
 	"STR",											\
-	"COMMA",										\		
+	"COMMA",										\
 	"COLON",										\
 	"SEMICOLON",									\
 	"LPAR",											\
@@ -76,14 +79,14 @@ enum Atoms
 	"DIV",											\
 	"AND",											\
 	"OR",											\
-	"NOT",											\	
+	"NOT",											\
 	"ASSIGN",										\
 	"EQUAL",										\
 	"NOTEQ",										\
 	"LESS",											\
 	"LESSEQ",										\
 	"GREATER",										\
-	"GREATERQ"										\	
+	"GREATERQ"										\
 }			
 
 #define MAX_STR 127

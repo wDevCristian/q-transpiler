@@ -6,7 +6,7 @@
 #include "sintaxer.h"
 
 int main() {
-    char *buff = loadFile("q-src/def-data.q");
+    char *buff = loadFile("q-src/1.q");
     tokenize(buff);
     showTokens();
     

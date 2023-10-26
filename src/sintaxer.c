@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "lexer.h"
 
@@ -91,31 +92,50 @@ void parse()
  */
 bool program()
 {
+	printf("\n-============ program ===============-\n\n");
+
 	for (;;)
 	{
 		if (defVar())
 		{
 			if (consume(FINISH))
 			{
+				printf("\n-============ end program ===============-\n\n");
 				return true;
 			}
 		}
-		// else if (defFunc())
-		// {
-		// }
-		// else if (block())
-		// {
-		// }
+		else if (defFunc())
+		{
+			if (consume(FINISH))
+			{
+				printf("\n-============ end program ===============-\n\n");
+				return true;
+			}
+		}
+		else if (block())
+		{
+			if (consume(FINISH))
+			{
+				printf("\n-============ end program ===============-\n\n");
+				return true;
+			}
+		}
 		else
 			break;
 	}
 	if (consume(FINISH))
 	{
+		printf("\n-============ end program ===============-\n\n");
 		return true;
 	}
+	else if (strcmp(ATOMS_CODE_NAME[tokens[iTk].code], "ID") == 0)
+	{
+		tkerr("unexpected token '%s', waiting for 'var', 'function' or instruction block", tokens[iTk].text);
+	}
 	else
-		tkerr("syntax error");
-	return false;
+	{
+		tkerr("unexpected token '%s', waiting for 'var', 'function' or instruction block", ATOMS_CODE_NAME[tokens[iTk].code]);
+	}
 }
 
 /**
@@ -123,6 +143,8 @@ bool program()
  */
 bool defVar()
 {
+	printf("\n-============ defVar ===============-\n\n");
+
 	int start = iTk;
 	if (consume(VAR))
 	{
@@ -134,6 +156,7 @@ bool defVar()
 				{
 					if (consume(SEMICOLON))
 					{
+						printf("\n-============ end defVar ===============-\n\n");
 						return true;
 					}
 					else
@@ -162,68 +185,140 @@ bool defVar()
 	}
 	else
 	{
-		printf("iTk = %d\n", iTk);
-		tkerr("missing token 'var'\n");
-		// TODO: find a way to write about the first token error on defVar, defFunc and block 
+		// printf("iTk = %d\n", iTk);
+		// tkerr("missing token 'var'\n");
 	}
 
 	iTk = start;
+	printf("\n-============ end defVar ===============-\n\n");
 	return false;
 }
 
 /**
  * @brief defFunc ::= FUNCTION ID LPAR funcParams? RPAR COLON baseType defVar* block END
-*/
-bool defFunc() {
-	int start = iTk; 
+ */
+bool defFunc()
+{
+	printf("\n-============ defFunc ===============-\n\n");
 
-	if (consume(FUNCTION)) {
-		if (consume(ID)) {
-			if (consume(LPAR)) {
-				if (funcParams()) {
+	int start = iTk;
 
+	if (consume(FUNCTION))
+	{
+		if (consume(ID))
+		{
+			if (consume(LPAR))
+			{
+				if (funcParams())
+				{
 				}
-				if (consume(RPAR)) {
-					if (consume(COLON)) {
-						if (baseType()) {
-							while (true) {
-								if (defVar()) {
-
+				if (consume(RPAR))
+				{
+					if (consume(COLON))
+					{
+						if (baseType())
+						{
+							while (defVar())
+							{
+								if (block())
+								{
+									if (consume(END))
+									{
+										printf("\n-============ end defFunc ===============-\n\n");
+										return true;
+									}
+									else
+									{
+										printf("iTk = %d\n", iTk);
+										tkerr("missing token 'end'\n");
+									}
 								}
 							}
-							if (block()) {
-								if (consume(END)) {
+							if (block())
+							{
+								if (consume(END))
+								{
+									printf("\n-============ end defFunc ===============-\n\n");
 									return true;
 								}
+								else
+								{
+									printf("iTk = %d\n", iTk);
+									tkerr("missing token 'end'\n");
+								}
+							} else {
+								printf("iTk = %d\n", iTk);
+								tkerr("missing block of instruction\n");
 							}
 						}
- 					}
+						else
+						{
+							printf("iTk = %d\n", iTk);
+							tkerr("undefined type of data\n");
+						}
+					}
+					else
+					{
+						printf("iTk = %d\n", iTk);
+						tkerr("missing token ':'\n");
+					}
+				}
+				else
+				{
+					printf("iTk = %d\n", iTk);
+					tkerr("missing token ')'\n");
 				}
 			}
+			else
+			{
+				printf("iTk = %d\n", iTk);
+				tkerr("missing token '('\n");
+			}
+		}
+		else
+		{
+			printf("iTk = %d\n", iTk);
+			tkerr("missing function name\n");
 		}
 	}
+	else
+	{
+		// printf("iTk = %d\n", iTk);
+		// tkerr("missing token 'function'\n");
+	}
 
-	iTk = start; 
-	return false; 
+	iTk = start;
+	printf("\n-============ end defFunc ===============-\n\n");
+	return false;
 }
 
 /**
  * @brief block ::= instr+
-*/
-bool block() {
-	int start = iTk; 
+ */
+bool block()
+{
+	printf("\n-============ block ===============-\n\n");
 
-	do
+	int start = iTk;
+
+	if (instr())
 	{
-		if (instr()) {
+	}
+	else
+	{
+		printf("iTk = %d\n", iTk);
+		// tkerr("instruction has not been found\n");
+		iTk = start;
+		printf("\n-============ end block ===============-\n\n");
+		return false;
+	}
 
-		}
-	} while (true);
-	
-	
-	
-	iTk = start; 
-	return false; 
+	while (instr())
+	{
+	}
+
+	printf("\n-============ end block ===============-\n\n");
+	return true;
 }
 
 /**
@@ -231,61 +326,106 @@ bool block() {
  */
 bool baseType()
 {
+	printf("\n-============ baseType ===============-\n\n");
+
 	int start = iTk; // Detailed description after the member
 	if (consume(TYPE_INT))
 	{
+		printf("\n-============ end baseType ===============-\n\n");
 		return true;
 	}
 	else if (consume(TYPE_REAL))
 	{
+		printf("\n-============ end baseType ===============-\n\n");
 		return true;
 	}
 	else if (consume(TYPE_STR))
 	{
+		printf("\n-============ end baseType ===============-\n\n");
 		return true;
 	}
 	else
 	{
 		iTk = start;
-		tkerr("inexistent type of data\n");
+		tkerr("undefined or inexistent type of data\n");
+		printf("\n-============ end baseType ===============-\n\n");
 		return false;
 	}
 }
 
-
 /**
  * @brief funcParams ::= funcParam ( COMMA funcParam )*
-*/
-bool funcParams() {
-	int start = iTk; 
+ */
+bool funcParams()
+{
+	printf("\n-============ funcParams ===============-\n\n");
 
-	if (funcParam()) {
-		while (consume(COMMA)) {
-			if (funcParam()) {
-				return true;
+	int start = iTk;
+
+	if (funcParam())
+	{
+		while (true)
+		{
+			if (consume(COMMA))
+			{
+				if (funcParam())
+				{
+					start = iTk;
+				}
+			}
+			else
+			{
+				if (consume(RPAR) != true) {
+					printf("iTk = %d\n", iTk - 1);
+					tkerr("missing token ',', after '%s'\n", ATOMS_CODE_NAME[tokens[iTk - 2].code]);
+				}
+				else
+				{	
+					iTk--;
+					printf("\n-============ end funcParams ===============-\n\n");
+					return true;
+				}
 			}
 		}
+
+		printf("\n-============ end funcParams ===============-\n\n");
+		return true;
 	}
 
-	iTk = start; 
+	iTk = start;
+	printf("\n-============ end funcParams ===============-\n\n");
 	return false;
 }
 
 /**
  * @brief funcParam ::= ID COLON baseType
-*/
-bool funcParam() {
-	int start = iTk; 
+ */
+bool funcParam()
+{
+	printf("\n-============ funcParam ===============-\n\n");
 
-	if (consume(ID)) {
-		if (consume(COLON)) {
-			if (baseType()) {
-				return true; 
+	int start = iTk;
+
+	if (consume(ID))
+	{
+		if (consume(COLON))
+		{
+			if (baseType())
+			{
+				printf("\n-============ end funcParam ===============-\n\n");
+				return true;
 			}
+		} else {
+			printf("iTk = %d\n", iTk);
+			tkerr("missing token ':', after '%s'\n", tokens[iTk - 1].text);
 		}
+	} else {
+		printf("iTk = %d\n", iTk);
+		tkerr("missing token 'id' at func param declaration\n");
 	}
 
-	iTk = start; 
+	iTk = start;
+	printf("\n-============ end funcParam ===============-\n\n");
 	return false;
 }
 
@@ -294,51 +434,84 @@ bool funcParam() {
  *		| IF LPAR expr RPAR block ( ELSE block )? END
  *		| RETURN expr SEMICOLON
  *		| WHILE LPAR expr RPAR block END
-*/
-bool instr() {
-	int start = iTk; 
+ */
+bool instr()
+{
+	printf("\n-============ instr ===============-\n\n");
 
-	if (expr()) {
-	
+	int start = iTk;
+
+	if (expr())
+	{
+		if (consume(SEMICOLON)) {
+			printf("\n-============ end instr ===============-\n\n");
+			return true;
+		}
 	}
+
 	if (consume(SEMICOLON)) {
-		if (consume(IF)) {
-			if (consume(LPAR)) {
-				if (expr()) {
-					if (consume(RPAR)) {
-						if (block()) {
-							
-						}
-						if (consume(ELSE)) {
-							if (block()) {
-								if (consume(END)) {
-									return true; 
-								}
+			printf("\n-============ end instr ===============-\n\n");
+			return true;
+	}
+
+	
+	if (consume(IF))
+	{
+		if (consume(LPAR))
+		{
+			if (expr())
+			{
+				if (consume(RPAR))
+				{
+					if (block())
+					{
+					}
+					if (consume(ELSE))
+					{
+						if (block())
+						{
+							if (consume(END))
+							{
+								printf("\n-============ end instr ===============-\n\n");
+								return true;
 							}
 						}
-						if (consume(END)) {
-							return true;
-						}
+					}
+					if (consume(END))
+					{
+						printf("\n-============ end instr ===============-\n\n");
+						return true;
 					}
 				}
 			}
 		}
 	}
 
-	if (consume(RETURN)) {
-		if (expr()) {
-			if (consume(SEMICOLON)) {
+	if (consume(RETURN))
+	{
+		if (expr())
+		{
+			if (consume(SEMICOLON))
+			{
+				printf("\n-============ end instr ===============-\n\n");
 				return true;
 			}
 		}
 	}
 
-	if (consume(WHILE)) {
-		if (consume(LPAR)) {
-			if (expr()) {
-				if (consume(RPAR)) {
-					if (block()) {
-						if (consume(END)) {
+	if (consume(WHILE))
+	{
+		if (consume(LPAR))
+		{
+			if (expr())
+			{
+				if (consume(RPAR))
+				{
+					if (block())
+					{
+						if (consume(END))
+						{
+							printf("\n-============ end instr ===============-\n\n");
 							return true;
 						}
 					}
@@ -347,146 +520,210 @@ bool instr() {
 		}
 	}
 
-	iTk = start; 
+	iTk = start;
+	printf("\n-============ end instr ===============-\n\n");
 	return false;
 }
 
 /**
  * @brief expr ::= exprLogic
-*/
-bool expr() {
-	int start = iTk; 
+ */
+bool expr()
+{
+	printf("\n-============ expr ===============-\n\n");
 
-	if (exprLogic()) {
+	int start = iTk;
+
+	if (exprLogic())
+	{
+		printf("\n-============ end expr ===============-\n\n");
 		return true;
 	}
 
-	iTk = start; 
+	iTk = start;
+	printf("\n-============ end expr ===============-\n\n");
 	return false;
 }
 
 /**
  * @brief exprLogic ::= exprAssign ( ( AND | OR ) exprAssign )*
-*/
-bool exprLogic() {
-	int start = iTk; 
+ */
+bool exprLogic()
+{
+	printf("\n-============ exprLogic ===============-\n\n");
 
-	if (exprAssign()) {
-		while (consume(AND) || consume(OR)) {
-			if (exprAssign()){
-				// return true;
+	int start = iTk;
+
+	if (exprAssign())
+	{
+		while (consume(AND) || consume(OR))
+		{
+			if (exprAssign())
+			{
 			}
 		}
+		printf("\n-============ end ===============-\n\n");
+		return true;
 	}
 
-	iTk = start; 
+	iTk = start;
+	printf("\n-============ end exprLogic ===============-\n\n");
 	return false;
 }
 
-
 /**
  * @brief exprAssign ::= ( ID ASSIGN )? exprComp
-*/
-bool exprAssign() {
-	int start = iTk; 
+ */
+bool exprAssign()
+{
+	printf("\n-============ exprAssign ===============-\n\n");
 
-	if (consume(ID)) {
-		if (consume(ASSIGN)) {
-			if (exprComp()) {
-				return true; 
+	int start = iTk;
+
+	if (consume(ID))
+	{
+		if (consume(ASSIGN))
+		{
+			if (exprComp())
+			{
+				printf("\n-============ end exprAssign ===============-\n\n");
+				return true;
 			}
+		} else {
+			iTk--;
 		}
 	}
 
-	if (exprComp()) {
+	if (exprComp())
+	{
+		printf("\n-============ end exprAssign ===============-\n\n");
 		return true;
 	}
-	
-	iTk = start; 
+
+	iTk = start;
+	printf("\n-============ end exprAssign ===============-\n\n");
 	return false;
 }
 
 /**
  * @brief exprComp ::= exprAdd ( ( LESS | EQUAL ) exprAdd )?
-*/
-bool exprComp() {
-	int start = iTk; 
+ */
+bool exprComp()
+{
+	printf("\n-============ exprComp ===============-\n\n");
 
-	if (exprAdd()) {
-		if (consume(LESS) || consume(EQUAL)) {
-			if (exprAdd()) {
+	int start = iTk;
+
+	if (exprAdd())
+	{
+		if (consume(LESS))
+		{
+			if (exprAdd())
+			{
+				printf("\n-============ end exprComp ===============-\n\n");
 				return true;
 			}
 		}
 
+		if (consume(EQUAL)) {
+			if (exprAdd())
+			{
+				printf("\n-============ end exprComp ===============-\n\n");
+				return true;
+			}
+		}
+
+		printf("\n-============ end exprComp ===============-\n\n");
 		return true;
 	}
 
-	iTk = start; 
+	iTk = start;
+	printf("\n-============ end exprComp ===============-\n\n");
 	return false;
 }
 
 /**
  * @brief exprAdd ::= exprMul ( ( ADD | SUB ) exprMul )*
-*/
-bool exprAdd() {
-	int start = iTk; 
+ */
+bool exprAdd()
+{
+	printf("\n-============ exprAdd ===============-\n\n");
 
-	if (exprMul()) {
-		while (consume(ADD) || consume(SUB)) {
-			if (exprMul()) {
-				// return true;
+	int start = iTk;
+
+	if (exprMul())
+	{
+		while (consume(ADD) || consume(SUB))
+		{
+			if (exprMul())
+			{
 			}
 		}
 
+		printf("\n-============ end exprAdd ===============-\n\n");
 		return true;
 	}
 
-	iTk = start; 
+	iTk = start;
+	printf("\n-============ end exprAdd ===============-\n\n");
 	return false;
 }
 
 /**
  * @brief exprMul ::= exprPrefix ( ( MUL | DIV ) exprPrefix )*
-*/
-bool exprMul() {
-	int start = iTk; 
+ */
+bool exprMul()
+{
+	printf("\n-============ exprMul ===============-\n\n");
 
-	if (exprPrefix()) {
-		while (consume(MUL) || consume(DIV)){
-			if (exprPrefix) {
-				// return true; 
+	int start = iTk;
+
+	if (exprPrefix())
+	{
+		while (consume(MUL) || consume(DIV))
+		{
+			if (exprPrefix())
+			{
 			}
 		}
 
+		printf("\n-============ end exprMul ===============-\n\n");
 		return true;
 	}
 
-	iTk = start; 
+	iTk = start;
+	printf("\n-============ end exprMul ===============-\n\n");
 	return false;
 }
 
-
 /**
  * @brief exprPrefix ::= (SUB | NOT)? factor
-*/
-bool exprPrefix() {
-	int start = iTk; 
+ */
+bool exprPrefix()
+{
+	printf("\n-============ exprPrefix ===============-\n\n");
 
-	if (consume(SUB) || consume(NOT)) {
-		if (factor()) {
+	int start = iTk;
+
+	if (consume(SUB) || consume(NOT))
+	{
+		if (factor())
+		{
+			printf("\n-============ end exprPrefix ===============-\n\n");
 			return true;
 		}
 	}
 
-	if (factor()) {
+	if (factor())
+	{
+		printf("\n-============ end exprPrefix ===============-\n\n");
 		return true;
 	}
 
-	iTk = start; 
+	iTk = start;
+	printf("\n-============ end exprPrefix ===============-\n\n");
 	return false;
 }
-
 
 /**
  * factor ::= INT
@@ -495,76 +732,72 @@ bool exprPrefix() {
 | LPAR expr RPAR
 | ID ( LPAR ( expr ( COMMA expr )* )? RPAR )?
 */
-bool factor() {
-	int start = iTk; 
+bool factor()
+{
+	printf("\n-============ factor ===============-\n\n");
 
-	if (consume(INT) || consume(REAL) || consume(STR)) {
-		return true; 
+	int start = iTk;
+
+	if (consume(INT) || consume(REAL) || consume(STR))
+	{
+		printf("\n-============ end factor ===============-\n\n");
+		return true;
 	}
 
-	if (consume(LPAR)) {
-		if (expr()) {
-			if (consume(RPAR)) {
-				return true; 
+	if (consume(LPAR))
+	{
+		if (expr())
+		{
+			if (consume(RPAR))
+			{
+				printf("\n-============ end factor ===============-\n\n");
+				return true;
 			}
 		}
 	}
 
-	if (consume(ID)) {
-		if (consume(LPAR)) {
-			if(expr()) {
-				while (consume(COMMA)) {
-					if (expr()) {
-						// return true;
+	if (consume(ID))
+	{
+		if (consume(LPAR))
+		{
+			if (expr())
+			{
+				while (consume(COMMA))
+				{
+					if (expr())
+					{	
+					} else {
+						printf("iTk = %d\n", iTk);
+						tkerr("missing expr\n");
 					}
 				}
+
+				if (expr()) {
+					printf("iTk = %d\n", iTk - 1);
+					tkerr("missing token ','\n");
+				}
+
+				printf("\n-============ end factor ===============-\n\n");
+				return true;
+				
 			}
-			if (consume(RPAR)) {
+
+			printf("\n-============ end factor ===============-\n\n");
+			return true;
+
+			if (consume(RPAR))
+			{
+				printf("\n-============ end factor ===============-\n\n");
 				return true;
 			}
 		}
 
+		printf("\n-============ end factor ===============-\n\n");
 		return true;
 	}
-	
-	iTk = start; 
+
+	iTk = start;
+	printf("\n-============ end factor ===============-\n\n");
 	return false;
 }
 
-
-// This is a cheatsheet for doxygen
-
-/**
- * @brief Example showing how to document a function with Doxygen.
- *
- * Description of what the function does. This part may refer to the parameters
- * of the function, like @p param1 or @p param2. A word of code can also be
- * inserted like @c this which is equivalent to <tt>this</tt> and can be useful
- * to say that the function returns a @c void or an @c int. If you want to have
- * more than one word in typewriter font, then just use @<tt@>.
- * We can also include text verbatim,
- * @verbatim like this@endverbatim
- * Sometimes it is also convenient to include an example of usage:
- * @code
- * BoxStruct *out = Box_The_Function_Name(param1, param2);
- * printf("something...\n");
- * @endcode
- * Or,
- * @code{.py}
- * pyval = python_func(arg1, arg2)
- * print pyval
- * @endcode
- * when the language is not the one used in the current source file (but
- * <b>be careful</b> as this may be supported only by recent versions
- * of Doxygen). By the way, <b>this is how you write bold text</b> or,
- * if it is just one word, then you can just do @b this.
- * @param param1 Description of the first parameter of the function.
- * @param param2 The second one, which follows @p param1.
- * @return Describe what the function returns.
- * @see Box_The_Second_Function
- * @see Box_The_Last_One
- * @see http://website/
- * @note Something to note.
- * @warning Warning.
- */
-void func();
