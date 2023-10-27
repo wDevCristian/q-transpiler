@@ -8,9 +8,10 @@ function max(x:int, y:int):int
         end
     end
 
-var i:int;
+var i: int;
 i=0;    # iterator
-while(i<10)
+
+while (a || b)
     puti(max(i,5));
     i=i+1;
     end

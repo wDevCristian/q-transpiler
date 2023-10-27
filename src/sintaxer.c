@@ -69,7 +69,12 @@ bool consume(int code)
 		printf(" => consumed\n");
 		return true;
 	}
-	printf(" => found %s\n", ATOMS_CODE_NAME[tokens[iTk].code]);
+	printf(" => at line %d: found %s", tokens[iTk].line, ATOMS_CODE_NAME[tokens[iTk].code]);
+	if (iTk - 1 >= 0) {
+		char *details = (tokens[iTk - 1].code == 0) ? ", after %s = %s\n" : ", after %s\n";
+		printf(details, ATOMS_CODE_NAME[tokens[iTk - 1].code], tokens[iTk - 1].text);
+	}
+
 	return false;
 }
 
@@ -162,25 +167,25 @@ bool defVar()
 					else
 					{
 						printf("iTk = %d\n", iTk);
-						tkerr("missing token ';'\n");
+						tkerr("missing token ';', after data type definition\n");
 					}
 				}
 				else
 				{
 					printf("iTk = %d\n", iTk);
-					tkerr("missing base type\n");
+					tkerr("missing data type definition\n");
 				}
 			}
 			else
 			{
 				printf("iTk = %d\n", iTk);
-				tkerr("missing token ':'\n");
+				tkerr("missing token ':, after '%s'\n", tokens[iTk].text);
 			}
 		}
 		else
 		{
 			printf("iTk = %d\n", iTk);
-			tkerr("missing id\n");
+			tkerr("missing id at variable definition/declaration\n");
 		}
 	}
 	else
@@ -248,19 +253,14 @@ bool defFunc()
 								}
 							} else {
 								printf("iTk = %d\n", iTk);
-								tkerr("missing block of instruction\n");
+								tkerr("missing block of instruction for function definition\n");
 							}
-						}
-						else
-						{
-							printf("iTk = %d\n", iTk);
-							tkerr("undefined type of data\n");
 						}
 					}
 					else
 					{
 						printf("iTk = %d\n", iTk);
-						tkerr("missing token ':'\n");
+						tkerr("missing token ':', after ')\n");
 					}
 				}
 				else
@@ -272,7 +272,7 @@ bool defFunc()
 			else
 			{
 				printf("iTk = %d\n", iTk);
-				tkerr("missing token '('\n");
+				tkerr("missing token '(', after '%s'\n", tokens[iTk - 1].text);
 			}
 		}
 		else
@@ -441,64 +441,6 @@ bool instr()
 
 	int start = iTk;
 
-	if (expr())
-	{
-		if (consume(SEMICOLON)) {
-			printf("\n-============ end instr ===============-\n\n");
-			return true;
-		}
-	}
-
-	if (consume(SEMICOLON)) {
-			printf("\n-============ end instr ===============-\n\n");
-			return true;
-	}
-
-	
-	if (consume(IF))
-	{
-		if (consume(LPAR))
-		{
-			if (expr())
-			{
-				if (consume(RPAR))
-				{
-					if (block())
-					{
-					}
-					if (consume(ELSE))
-					{
-						if (block())
-						{
-							if (consume(END))
-							{
-								printf("\n-============ end instr ===============-\n\n");
-								return true;
-							}
-						}
-					}
-					if (consume(END))
-					{
-						printf("\n-============ end instr ===============-\n\n");
-						return true;
-					}
-				}
-			}
-		}
-	}
-
-	if (consume(RETURN))
-	{
-		if (expr())
-		{
-			if (consume(SEMICOLON))
-			{
-				printf("\n-============ end instr ===============-\n\n");
-				return true;
-			}
-		}
-	}
-
 	if (consume(WHILE))
 	{
 		if (consume(LPAR))
@@ -513,13 +455,114 @@ bool instr()
 						{
 							printf("\n-============ end instr ===============-\n\n");
 							return true;
+						} else {
+							printf("iTk = %d\n", iTk);
+							tkerr("missing token 'end', after block\n");
 						}
+					} else {
+						printf("iTk = %d\n", iTk);
+						tkerr("missing block of expr in while loop\n");
 					}
+				} else {
+					printf("iTk = %d\n", iTk);
+					tkerr("missing token ')', after expr\n");
 				}
+			} else {
+				printf("iTk = %d\n", iTk);
+				tkerr("missing expr in while loop\n");
 			}
+		} else {
+			printf("iTk = %d\n", iTk);
+			tkerr("missing token '(', after '%s'\n", ATOMS_CODE_NAME[tokens[iTk - 1].code]);
 		}
 	}
 
+	if (consume(IF))
+	{
+		if (consume(LPAR))
+		{
+			if (expr())
+			{
+				if (consume(RPAR))
+				{
+					if (block())
+					{
+						if (consume(ELSE))
+						{
+							if (block())
+							{
+								if (consume(END))
+								{
+									printf("\n-============ end instr ===============-\n\n");
+									return true;
+								}
+							} else {
+								printf("iTk = %d\n", iTk);
+								tkerr("missing block of expr in else branch\n");
+							}
+						}
+						
+						if (consume(END))
+						{
+							printf("\n-============ end instr ===============-\n\n");
+							return true;
+						}
+					} else {
+						printf("iTk = %d\n", iTk);
+						tkerr("missing block of expr in if statement \n");
+					}
+				} else {
+					printf("iTk = %d\n", iTk);
+					tkerr("missing token ')', after expr\n");
+				}
+			} else {
+				printf("iTk = %d\n", iTk);
+				tkerr("missing expr in if statement\n");
+			}
+		} else {
+			printf("iTk = %d\n", iTk);
+			tkerr("missing token '(', after '%s'\n", ATOMS_CODE_NAME[tokens[iTk - 1].code]);
+		}
+	}
+
+	if (consume(RETURN))
+	{
+		if (expr())
+		{
+			if (consume(SEMICOLON))
+			{
+				printf("\n-============ end instr ===============-\n\n");
+				return true;
+			} else {
+				printf("iTk = %d\n", iTk);
+				tkerr("missing token ';' after expr, received '%s'\n", ATOMS_CODE_NAME[tokens[iTk].code]);
+			}
+		} else {
+			printf("iTk = %d\n", iTk);
+			tkerr("missing after 'return' expr\n");
+		}
+	}
+
+	if (expr())
+	{
+		if (consume(SEMICOLON)) {
+			printf("\n-============ end instr ===============-\n\n");
+			return true;
+		} else {
+			if (consume(COLON)) {
+				return false;
+			}
+			printf("iTk = %d\n", iTk);
+			tkerr("missing token ';' after expr, received '%s'\n", ATOMS_CODE_NAME[tokens[iTk].code]);
+		}
+	}
+
+	if (consume(SEMICOLON)) {
+			printf("\n-============ end instr ===============-\n\n");
+			return true;
+	}
+
+	
 	iTk = start;
 	printf("\n-============ end instr ===============-\n\n");
 	return false;
@@ -560,6 +603,9 @@ bool exprLogic()
 		{
 			if (exprAssign())
 			{
+			} else {
+				printf("iTk = %d\n", iTk);
+				tkerr("missing right side operand of 'OR' or 'AND' operator\n");
 			}
 		}
 		printf("\n-============ end ===============-\n\n");
@@ -594,6 +640,11 @@ bool exprAssign()
 		}
 	}
 
+	if (consume(ASSIGN)) {
+		printf("iTk = %d\n", iTk);
+		tkerr("missing id in front of '='\n");
+	}
+
 	if (exprComp())
 	{
 		printf("\n-============ end exprAssign ===============-\n\n");
@@ -622,6 +673,9 @@ bool exprComp()
 			{
 				printf("\n-============ end exprComp ===============-\n\n");
 				return true;
+			} else {
+				printf("iTk = %d\n", iTk);
+				tkerr("missing expression after comparison operator\n");
 			}
 		}
 
@@ -630,6 +684,9 @@ bool exprComp()
 			{
 				printf("\n-============ end exprComp ===============-\n\n");
 				return true;
+			} else {
+				printf("iTk = %d\n", iTk);
+				tkerr("missing expression after comparison operator\n");
 			}
 		}
 
@@ -657,6 +714,9 @@ bool exprAdd()
 		{
 			if (exprMul())
 			{
+			} else {
+				printf("iTk = %d\n", iTk);
+				tkerr("missing right side operand for the 'AND' or 'SUB' operator\n");
 			}
 		}
 
@@ -684,6 +744,9 @@ bool exprMul()
 		{
 			if (exprPrefix())
 			{
+			} else {
+				printf("iTk = %d\n", iTk);
+				tkerr("missing right side operand for the 'MUL' or 'DIV' operator\n");
 			}
 		}
 
@@ -711,6 +774,9 @@ bool exprPrefix()
 		{
 			printf("\n-============ end exprPrefix ===============-\n\n");
 			return true;
+		} else {
+			printf("iTk = %d\n", iTk);
+			tkerr("missing right side operand for the 'SUB' or 'NOT' operator\n");
 		}
 	}
 
@@ -731,6 +797,11 @@ bool exprPrefix()
 | STR
 | LPAR expr RPAR
 | ID ( LPAR ( expr ( COMMA expr )* )? RPAR )?
+
+ID
+ID LPAR RPAR
+ID LPAR EXPR RPAR
+ID LPAR EXPR (COMMA EXPR)* RPAR
 */
 bool factor()
 {
@@ -738,11 +809,6 @@ bool factor()
 
 	int start = iTk;
 
-	if (consume(INT) || consume(REAL) || consume(STR))
-	{
-		printf("\n-============ end factor ===============-\n\n");
-		return true;
-	}
 
 	if (consume(LPAR))
 	{
@@ -768,7 +834,7 @@ bool factor()
 					{	
 					} else {
 						printf("iTk = %d\n", iTk);
-						tkerr("missing expr\n");
+						tkerr("missing expr after ','\n");
 					}
 				}
 
@@ -777,13 +843,18 @@ bool factor()
 					tkerr("missing token ','\n");
 				}
 
-				printf("\n-============ end factor ===============-\n\n");
-				return true;
+				if (consume(RPAR)) {
+					printf("\n-============ end factor ===============-\n\n");
+					return true;	
+				} else {
+					printf("iTk = %d\n", iTk);
+					tkerr("missing token ')', after expr\n");
+				}
+
+				// printf("\n-============ end factor ===============-\n\n");
+				// return false;
 				
 			}
-
-			printf("\n-============ end factor ===============-\n\n");
-			return true;
 
 			if (consume(RPAR))
 			{
@@ -792,6 +863,12 @@ bool factor()
 			}
 		}
 
+		printf("\n-============ end factor ===============-\n\n");
+		return true;
+	}
+
+	if (consume(INT) || consume(REAL) || consume(STR))
+	{
 		printf("\n-============ end factor ===============-\n\n");
 		return true;
 	}
