@@ -421,7 +421,7 @@ bool funcParam()
 		}
 	} else {
 		printf("iTk = %d\n", iTk);
-		tkerr("missing token 'id' at func param declaration\n");
+		tkerr("missing 'id' at func. param. declaration\n");
 	}
 
 	iTk = start;
@@ -501,7 +501,6 @@ bool instr()
 								tkerr("missing block of expr in else branch\n");
 							}
 						}
-						
 						if (consume(END))
 						{
 							printf("\n-============ end instr ===============-\n\n");
@@ -599,13 +598,27 @@ bool exprLogic()
 
 	if (exprAssign())
 	{
-		while (consume(AND) || consume(OR))
-		{
-			if (exprAssign())
-			{
-			} else {
-				printf("iTk = %d\n", iTk);
-				tkerr("missing right side operand of 'OR' or 'AND' operator\n");
+		while (true)
+		{	
+			if (consume(AND)) {
+				if (exprAssign()) {
+				} else {
+					printf("iTk = %d\n", iTk);
+					tkerr("missing expression after '&&' operator\n");
+				}
+
+			}
+
+			if (consume(OR)) {
+				if (exprAssign()) {
+				} else {
+					printf("iTk = %d\n", iTk);
+					tkerr("missing expression after '||' operator\n");
+				}
+			}
+
+			if (!consume(OR) && !consume(AND)) {
+				break;
 			}
 		}
 		printf("\n-============ end ===============-\n\n");
@@ -675,7 +688,7 @@ bool exprComp()
 				return true;
 			} else {
 				printf("iTk = %d\n", iTk);
-				tkerr("missing expression after comparison operator\n");
+				tkerr("missing expression after '<' operator\n");
 			}
 		}
 
@@ -686,7 +699,7 @@ bool exprComp()
 				return true;
 			} else {
 				printf("iTk = %d\n", iTk);
-				tkerr("missing expression after comparison operator\n");
+				tkerr("missing expression after '==' operator\n");
 			}
 		}
 
@@ -710,13 +723,28 @@ bool exprAdd()
 
 	if (exprMul())
 	{
-		while (consume(ADD) || consume(SUB))
-		{
-			if (exprMul())
-			{
-			} else {
-				printf("iTk = %d\n", iTk);
-				tkerr("missing right side operand for the 'AND' or 'SUB' operator\n");
+		while (true)
+		{	
+
+			if (consume(ADD)) {
+				if (exprMul()){
+				} else {
+					printf("iTk = %d\n", iTk);
+					tkerr("missing right side operand for the '+' operator\n");
+				}	
+			}
+
+			if (consume(SUB)) {
+				if (exprMul())
+				{
+				} else {
+					printf("iTk = %d\n", iTk);
+					tkerr("missing right side operand for the '-' operator\n");
+				}
+			}
+
+			if (!consume(ADD) && !consume(SUB)) {
+				break;
 			}
 		}
 
@@ -740,13 +768,28 @@ bool exprMul()
 
 	if (exprPrefix())
 	{
-		while (consume(MUL) || consume(DIV))
-		{
-			if (exprPrefix())
-			{
-			} else {
-				printf("iTk = %d\n", iTk);
-				tkerr("missing right side operand for the 'MUL' or 'DIV' operator\n");
+		while (true)
+		{	
+			if (consume(MUL)) {
+				if (exprPrefix())
+				{
+				} else {
+					printf("iTk = %d\n", iTk);
+					tkerr("missing right side operand for the '*' operator\n");
+				}
+			}
+			
+			if (consume(DIV)) {
+				if (exprPrefix())
+				{
+				} else {
+					printf("iTk = %d\n", iTk);
+					tkerr("missing right side operand for the '/' operator\n");
+				}
+			}
+
+			if (!consume(MUL) && !consume(DIV)) {
+				break;
 			}
 		}
 

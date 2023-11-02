@@ -4,7 +4,7 @@
 
 enum Atoms
 {
-	ID, 
+	ID,
 
 	// keywords
 	VAR,
@@ -46,19 +46,19 @@ enum Atoms
 	LESSEQ,
 	GREATER,
 	GREATERQ
-	// 
+	//
 };
 
 /**
  * @brief get atoms code name as a STRING by it's code
 */
-#define ATOMS_CODE_NAME (const char*[]){  			\
+#define ATOMS_CODE_NAME (const char*[]){  \
 	"ID",  											\
 	"VAR", 											\
 	"FUNCTION",										\
-	"IF",											\
+	"IF",												\
 	"ELSE",											\
-	"WHILE",										\
+	"WHILE",											\
 	"END",											\
 	"RETURN",										\
 	"TYPE_INT",										\
@@ -67,8 +67,8 @@ enum Atoms
 	"INT",											\
 	"REAL",											\
 	"STR",											\
-	"COMMA",										\
-	"COLON",										\
+	"COMMA",											\
+	"COLON",											\
 	"SEMICOLON",									\
 	"LPAR",											\
 	"RPAR",											\
@@ -78,16 +78,16 @@ enum Atoms
 	"MUL",											\
 	"DIV",											\
 	"AND",											\
-	"OR",											\
+	"OR",												\
 	"NOT",											\
 	"ASSIGN",										\
-	"EQUAL",										\
-	"NOTEQ",										\
+	"EQUAL",											\
+	"NOTEQ",											\
 	"LESS",											\
 	"LESSEQ",										\
 	"GREATER",										\
 	"GREATERQ"										\
-}			
+}
 
 #define MAX_STR 127
 

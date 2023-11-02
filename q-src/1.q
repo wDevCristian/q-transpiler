@@ -9,7 +9,7 @@ function max(x:int, y:int):int
     end
 
 var i: int;
-i=0;    # iterator
+i = 0;    # iterator
 
 while (a || b)
     puti(max(i,5));
