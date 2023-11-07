@@ -1,8 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <time.h>
 
 #include "utils.h"
+
+char *getCurrentDateTime()
+{
+	char *currentTime = (char *)malloc(sizeof(char) * 64);
+	time_t now;
+	struct tm *local;
+
+	now = time(NULL);
+	local = localtime(&now);
+
+	strftime(currentTime, 64, "%d.%m.%Y %H:%M:%S", local);
+
+	return currentTime;
+}
 
 void err(const char *fmt, ...)
 {

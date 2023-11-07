@@ -13,11 +13,13 @@
 #include <string.h>
 
 #include "lexer.h"
+#include "ad.h"
+#include "utils.h"
 
 /** short version of @code unsigned short int @endcode */
 #define USINT unsigned short int;
 
-int iTk = 0;	 // the iterator in tokens
+int iTk = 0;	  // the iterator in tokens
 Token *consumed; // the last consumed token
 
 /* Declaration of all functions used in program() */
@@ -70,7 +72,8 @@ bool consume(int code)
 		return true;
 	}
 	printf(" => at line %d: found %s", tokens[iTk].line, ATOMS_CODE_NAME[tokens[iTk].code]);
-	if (iTk - 1 >= 0) {
+	if (iTk - 1 >= 0)
+	{
 		char *details = (tokens[iTk - 1].code == 0) ? ", after %s = %s\n" : ", after %s\n";
 		printf(details, ATOMS_CODE_NAME[tokens[iTk - 1].code], tokens[iTk - 1].text);
 	}
@@ -99,6 +102,9 @@ bool program()
 {
 	printf("\n-============ program ===============-\n\n");
 
+	addDomain();
+	ILOG("Added new domain.\n");
+
 	for (;;)
 	{
 		if (defVar())
@@ -106,6 +112,7 @@ bool program()
 			if (consume(FINISH))
 			{
 				printf("\n-============ end program ===============-\n\n");
+				delDomain();
 				return true;
 			}
 		}
@@ -114,6 +121,7 @@ bool program()
 			if (consume(FINISH))
 			{
 				printf("\n-============ end program ===============-\n\n");
+				delDomain();
 				return true;
 			}
 		}
@@ -122,6 +130,7 @@ bool program()
 			if (consume(FINISH))
 			{
 				printf("\n-============ end program ===============-\n\n");
+				delDomain();
 				return true;
 			}
 		}
@@ -131,6 +140,7 @@ bool program()
 	if (consume(FINISH))
 	{
 		printf("\n-============ end program ===============-\n\n");
+		delDomain();
 		return true;
 	}
 	else if (strcmp(ATOMS_CODE_NAME[tokens[iTk].code], "ID") == 0)
@@ -155,10 +165,17 @@ bool defVar()
 	{
 		if (consume(ID))
 		{
+			const char *name = consumed->text;
+			Symbol *s = searchInCurrentDomain(name);
+			if (s)
+				tkerr("symbol redefinition: %s", name);
+			s = addSymbol(name, KIND_VAR);
+			s->local = crtFn != NULL;
 			if (consume(COLON))
 			{
 				if (baseType())
 				{
+					s->type = ret.type;
 					if (consume(SEMICOLON))
 					{
 						printf("\n-============ end defVar ===============-\n\n");
@@ -212,6 +229,14 @@ bool defFunc()
 	{
 		if (consume(ID))
 		{
+			const char *name = consumed->text;
+			Symbol *s = searchInCurrentDomain(name);
+			if (s)
+				tkerr("symbol redefinition: %s", name);
+			crtFn = addSymbol(name, KIND_FN);
+			crtFn->args = NULL;
+			addDomain();
+
 			if (consume(LPAR))
 			{
 				if (funcParams())
@@ -223,6 +248,8 @@ bool defFunc()
 					{
 						if (baseType())
 						{
+							crtFn->type = ret.type;
+
 							while (defVar())
 							{
 								if (block())
@@ -230,6 +257,8 @@ bool defFunc()
 									if (consume(END))
 									{
 										printf("\n-============ end defFunc ===============-\n\n");
+										delDomain();
+										crtFn = NULL;
 										return true;
 									}
 									else
@@ -244,6 +273,8 @@ bool defFunc()
 								if (consume(END))
 								{
 									printf("\n-============ end defFunc ===============-\n\n");
+									delDomain();
+									crtFn = NULL;
 									return true;
 								}
 								else
@@ -251,7 +282,9 @@ bool defFunc()
 									printf("iTk = %d\n", iTk);
 									tkerr("missing token 'end'\n");
 								}
-							} else {
+							}
+							else
+							{
 								printf("iTk = %d\n", iTk);
 								tkerr("missing block of instruction for function definition\n");
 							}
@@ -332,16 +365,19 @@ bool baseType()
 	if (consume(TYPE_INT))
 	{
 		printf("\n-============ end baseType ===============-\n\n");
+		ret.type = TYPE_INT;
 		return true;
 	}
 	else if (consume(TYPE_REAL))
 	{
 		printf("\n-============ end baseType ===============-\n\n");
+		ret.type = TYPE_REAL;
 		return true;
 	}
 	else if (consume(TYPE_STR))
 	{
 		printf("\n-============ end baseType ===============-\n\n");
+		ret.type = TYPE_STR;
 		return true;
 	}
 	else
@@ -375,12 +411,13 @@ bool funcParams()
 			}
 			else
 			{
-				if (consume(RPAR) != true) {
+				if (consume(RPAR) != true)
+				{
 					printf("iTk = %d\n", iTk - 1);
 					tkerr("missing token ',', after '%s'\n", ATOMS_CODE_NAME[tokens[iTk - 2].code]);
 				}
 				else
-				{	
+				{
 					iTk--;
 					printf("\n-============ end funcParams ===============-\n\n");
 					return true;
@@ -408,18 +445,31 @@ bool funcParam()
 
 	if (consume(ID))
 	{
+		const char *name = consumed->text;
+		Symbol *s = searchInCurrentDomain(name);
+		if (s)
+			tkerr("symbol redefinition: %s", name);
+		s = addSymbol(name, KIND_ARG);
+		Symbol *sFnParam = addFnArg(crtFn, name);
+
 		if (consume(COLON))
 		{
 			if (baseType())
 			{
 				printf("\n-============ end funcParam ===============-\n\n");
+				s->type = ret.type;
+				sFnParam->type = ret.type;
 				return true;
 			}
-		} else {
+		}
+		else
+		{
 			printf("iTk = %d\n", iTk);
 			tkerr("missing token ':', after '%s'\n", tokens[iTk - 1].text);
 		}
-	} else {
+	}
+	else
+	{
 		printf("iTk = %d\n", iTk);
 		tkerr("missing 'id' at func. param. declaration\n");
 	}
@@ -455,23 +505,33 @@ bool instr()
 						{
 							printf("\n-============ end instr ===============-\n\n");
 							return true;
-						} else {
+						}
+						else
+						{
 							printf("iTk = %d\n", iTk);
 							tkerr("missing token 'end', after block\n");
 						}
-					} else {
+					}
+					else
+					{
 						printf("iTk = %d\n", iTk);
 						tkerr("missing block of expr in while loop\n");
 					}
-				} else {
+				}
+				else
+				{
 					printf("iTk = %d\n", iTk);
 					tkerr("missing token ')', after expr\n");
 				}
-			} else {
+			}
+			else
+			{
 				printf("iTk = %d\n", iTk);
 				tkerr("missing expr in while loop\n");
 			}
-		} else {
+		}
+		else
+		{
 			printf("iTk = %d\n", iTk);
 			tkerr("missing token '(', after '%s'\n", ATOMS_CODE_NAME[tokens[iTk - 1].code]);
 		}
@@ -496,7 +556,9 @@ bool instr()
 									printf("\n-============ end instr ===============-\n\n");
 									return true;
 								}
-							} else {
+							}
+							else
+							{
 								printf("iTk = %d\n", iTk);
 								tkerr("missing block of expr in else branch\n");
 							}
@@ -506,19 +568,27 @@ bool instr()
 							printf("\n-============ end instr ===============-\n\n");
 							return true;
 						}
-					} else {
+					}
+					else
+					{
 						printf("iTk = %d\n", iTk);
 						tkerr("missing block of expr in if statement \n");
 					}
-				} else {
+				}
+				else
+				{
 					printf("iTk = %d\n", iTk);
 					tkerr("missing token ')', after expr\n");
 				}
-			} else {
+			}
+			else
+			{
 				printf("iTk = %d\n", iTk);
 				tkerr("missing expr in if statement\n");
 			}
-		} else {
+		}
+		else
+		{
 			printf("iTk = %d\n", iTk);
 			tkerr("missing token '(', after '%s'\n", ATOMS_CODE_NAME[tokens[iTk - 1].code]);
 		}
@@ -532,11 +602,15 @@ bool instr()
 			{
 				printf("\n-============ end instr ===============-\n\n");
 				return true;
-			} else {
+			}
+			else
+			{
 				printf("iTk = %d\n", iTk);
 				tkerr("missing token ';' after expr, received '%s'\n", ATOMS_CODE_NAME[tokens[iTk].code]);
 			}
-		} else {
+		}
+		else
+		{
 			printf("iTk = %d\n", iTk);
 			tkerr("missing after 'return' expr\n");
 		}
@@ -544,11 +618,15 @@ bool instr()
 
 	if (expr())
 	{
-		if (consume(SEMICOLON)) {
+		if (consume(SEMICOLON))
+		{
 			printf("\n-============ end instr ===============-\n\n");
 			return true;
-		} else {
-			if (consume(COLON)) {
+		}
+		else
+		{
+			if (consume(COLON))
+			{
 				return false;
 			}
 			printf("iTk = %d\n", iTk);
@@ -556,12 +634,12 @@ bool instr()
 		}
 	}
 
-	if (consume(SEMICOLON)) {
-			printf("\n-============ end instr ===============-\n\n");
-			return true;
+	if (consume(SEMICOLON))
+	{
+		printf("\n-============ end instr ===============-\n\n");
+		return true;
 	}
 
-	
 	iTk = start;
 	printf("\n-============ end instr ===============-\n\n");
 	return false;
@@ -599,25 +677,33 @@ bool exprLogic()
 	if (exprAssign())
 	{
 		while (true)
-		{	
-			if (consume(AND)) {
-				if (exprAssign()) {
-				} else {
+		{
+			if (consume(AND))
+			{
+				if (exprAssign())
+				{
+				}
+				else
+				{
 					printf("iTk = %d\n", iTk);
 					tkerr("missing expression after '&&' operator\n");
 				}
-
 			}
 
-			if (consume(OR)) {
-				if (exprAssign()) {
-				} else {
+			if (consume(OR))
+			{
+				if (exprAssign())
+				{
+				}
+				else
+				{
 					printf("iTk = %d\n", iTk);
 					tkerr("missing expression after '||' operator\n");
 				}
 			}
 
-			if (!consume(OR) && !consume(AND)) {
+			if (!consume(OR) && !consume(AND))
+			{
 				break;
 			}
 		}
@@ -648,12 +734,15 @@ bool exprAssign()
 				printf("\n-============ end exprAssign ===============-\n\n");
 				return true;
 			}
-		} else {
+		}
+		else
+		{
 			iTk--;
 		}
 	}
 
-	if (consume(ASSIGN)) {
+	if (consume(ASSIGN))
+	{
 		printf("iTk = %d\n", iTk);
 		tkerr("missing id in front of '='\n");
 	}
@@ -686,18 +775,23 @@ bool exprComp()
 			{
 				printf("\n-============ end exprComp ===============-\n\n");
 				return true;
-			} else {
+			}
+			else
+			{
 				printf("iTk = %d\n", iTk);
 				tkerr("missing expression after '<' operator\n");
 			}
 		}
 
-		if (consume(EQUAL)) {
+		if (consume(EQUAL))
+		{
 			if (exprAdd())
 			{
 				printf("\n-============ end exprComp ===============-\n\n");
 				return true;
-			} else {
+			}
+			else
+			{
 				printf("iTk = %d\n", iTk);
 				tkerr("missing expression after '==' operator\n");
 			}
@@ -724,26 +818,34 @@ bool exprAdd()
 	if (exprMul())
 	{
 		while (true)
-		{	
+		{
 
-			if (consume(ADD)) {
-				if (exprMul()){
-				} else {
-					printf("iTk = %d\n", iTk);
-					tkerr("missing right side operand for the '+' operator\n");
-				}	
-			}
-
-			if (consume(SUB)) {
+			if (consume(ADD))
+			{
 				if (exprMul())
 				{
-				} else {
+				}
+				else
+				{
+					printf("iTk = %d\n", iTk);
+					tkerr("missing right side operand for the '+' operator\n");
+				}
+			}
+
+			if (consume(SUB))
+			{
+				if (exprMul())
+				{
+				}
+				else
+				{
 					printf("iTk = %d\n", iTk);
 					tkerr("missing right side operand for the '-' operator\n");
 				}
 			}
 
-			if (!consume(ADD) && !consume(SUB)) {
+			if (!consume(ADD) && !consume(SUB))
+			{
 				break;
 			}
 		}
@@ -769,26 +871,33 @@ bool exprMul()
 	if (exprPrefix())
 	{
 		while (true)
-		{	
-			if (consume(MUL)) {
+		{
+			if (consume(MUL))
+			{
 				if (exprPrefix())
 				{
-				} else {
+				}
+				else
+				{
 					printf("iTk = %d\n", iTk);
 					tkerr("missing right side operand for the '*' operator\n");
 				}
 			}
-			
-			if (consume(DIV)) {
+
+			if (consume(DIV))
+			{
 				if (exprPrefix())
 				{
-				} else {
+				}
+				else
+				{
 					printf("iTk = %d\n", iTk);
 					tkerr("missing right side operand for the '/' operator\n");
 				}
 			}
 
-			if (!consume(MUL) && !consume(DIV)) {
+			if (!consume(MUL) && !consume(DIV))
+			{
 				break;
 			}
 		}
@@ -817,7 +926,9 @@ bool exprPrefix()
 		{
 			printf("\n-============ end exprPrefix ===============-\n\n");
 			return true;
-		} else {
+		}
+		else
+		{
 			printf("iTk = %d\n", iTk);
 			tkerr("missing right side operand for the 'SUB' or 'NOT' operator\n");
 		}
@@ -852,7 +963,6 @@ bool factor()
 
 	int start = iTk;
 
-
 	if (consume(LPAR))
 	{
 		if (expr())
@@ -874,29 +984,34 @@ bool factor()
 				while (consume(COMMA))
 				{
 					if (expr())
-					{	
-					} else {
+					{
+					}
+					else
+					{
 						printf("iTk = %d\n", iTk);
 						tkerr("missing expr after ','\n");
 					}
 				}
 
-				if (expr()) {
+				if (expr())
+				{
 					printf("iTk = %d\n", iTk - 1);
 					tkerr("missing token ','\n");
 				}
 
-				if (consume(RPAR)) {
+				if (consume(RPAR))
+				{
 					printf("\n-============ end factor ===============-\n\n");
-					return true;	
-				} else {
+					return true;
+				}
+				else
+				{
 					printf("iTk = %d\n", iTk);
 					tkerr("missing token ')', after expr\n");
 				}
 
 				// printf("\n-============ end factor ===============-\n\n");
 				// return false;
-				
 			}
 
 			if (consume(RPAR))
@@ -920,4 +1035,3 @@ bool factor()
 	printf("\n-============ end factor ===============-\n\n");
 	return false;
 }
-
