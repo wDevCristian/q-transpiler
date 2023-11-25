@@ -108,10 +108,10 @@ bool program()
 	ILOG("Added new domain.\n");
 	addPredefinedFns();
 	ILOG("Added predefined funtions.\n");
-	// crtCode = &tMain;
-	// crtVar = &tBegin;
-	// Text_write(&tBegin, "#include \"quick.h\"\n\n");
-	// Text_write(&tMain, "\nint main(){\n");
+	crtCode = &tMain;
+	crtVar = &tBegin;
+	Text_write(&tBegin, "#include \"quick.h\"\n\n");
+	Text_write(&tMain, "\nint main(){\n");
 
 	for (;;)
 	{
@@ -121,17 +121,17 @@ bool program()
 			{
 				printf("\n-============ end program ===============-\n\n");
 				delDomain();
-				// Text_write(&tMain, "return 0;\n}\n");
-				// FILE *fis = fopen("1.c", "w");
-				// if (!fis)
-				// {
-				// 	printf("cannot write to file 1.c\n");
-				// 	exit(EXIT_FAILURE);
-				// }
-				// fwrite(tBegin.buf, sizeof(char), tBegin.n, fis);
-				// fwrite(tFunctions.buf, sizeof(char), tFunctions.n, fis);
-				// fwrite(tMain.buf, sizeof(char), tMain.n, fis);
-				// fclose(fis);
+				Text_write(&tMain, "return 0;\n}\n");
+				FILE *fis = fopen("/gen-code/1.c", "w");
+				if (!fis)
+				{
+					printf("cannot write to file 1.c\n");
+					exit(EXIT_FAILURE);
+				}
+				fwrite(tBegin.buf, sizeof(char), tBegin.n, fis);
+				fwrite(tFunctions.buf, sizeof(char), tFunctions.n, fis);
+				fwrite(tMain.buf, sizeof(char), tMain.n, fis);
+				fclose(fis);
 				return true;
 			}
 		}
@@ -141,17 +141,17 @@ bool program()
 			{
 				printf("\n-============ end program ===============-\n\n");
 				delDomain();
-				// Text_write(&tMain, "return 0;\n}\n");
-				// FILE *fis = fopen("1.c", "w");
-				// if (!fis)
-				// {
-				// 	printf("cannot write to file 1.c\n");
-				// 	exit(EXIT_FAILURE);
-				// }
-				// fwrite(tBegin.buf, sizeof(char), tBegin.n, fis);
-				// fwrite(tFunctions.buf, sizeof(char), tFunctions.n, fis);
-				// fwrite(tMain.buf, sizeof(char), tMain.n, fis);
-				// fclose(fis);
+				Text_write(&tMain, "return 0;\n}\n");
+				FILE *fis = fopen("gen-code/1.c", "w");
+				if (!fis)
+				{
+					ELOG("cannot write to 'gen-code/1.c'\n");
+					exit(EXIT_FAILURE);
+				}
+				fwrite(tBegin.buf, sizeof(char), tBegin.n, fis);
+				fwrite(tFunctions.buf, sizeof(char), tFunctions.n, fis);
+				fwrite(tMain.buf, sizeof(char), tMain.n, fis);
+				fclose(fis);
 				return true;
 			}
 		}
@@ -161,17 +161,17 @@ bool program()
 			{
 				printf("\n-============ end program ===============-\n\n");
 				delDomain();
-				// Text_write(&tMain, "return 0;\n}\n");
-				// FILE *fis = fopen("1.c", "w");
-				// if (!fis)
-				// {
-				// 	printf("cannot write to file 1.c\n");
-				// 	exit(EXIT_FAILURE);
-				// }
-				// fwrite(tBegin.buf, sizeof(char), tBegin.n, fis);
-				// fwrite(tFunctions.buf, sizeof(char), tFunctions.n, fis);
-				// fwrite(tMain.buf, sizeof(char), tMain.n, fis);
-				// fclose(fis);
+				Text_write(&tMain, "return 0;\n}\n");
+				FILE *fis = fopen("gen-code/1.c", "w");
+				if (!fis)
+				{
+					ELOG("cannot write to file 'gen-code/1.c'\n");
+					exit(EXIT_FAILURE);
+				}
+				fwrite(tBegin.buf, sizeof(char), tBegin.n, fis);
+				fwrite(tFunctions.buf, sizeof(char), tFunctions.n, fis);
+				fwrite(tMain.buf, sizeof(char), tMain.n, fis);
+				fclose(fis);
 				return true;
 			}
 		}
@@ -182,17 +182,18 @@ bool program()
 	{
 		printf("\n-============ end program ===============-\n\n");
 		delDomain();
-		// Text_write(&tMain, "return 0;\n}\n");
-		// FILE *fis = fopen("1.c", "w");
-		// if (!fis)
-		// {
-		// 	printf("cannot write to file 1.c\n");
-		// 	exit(EXIT_FAILURE);
-		// }
-		// fwrite(tBegin.buf, sizeof(char), tBegin.n, fis);
-		// fwrite(tFunctions.buf, sizeof(char), tFunctions.n, fis);
-		// fwrite(tMain.buf, sizeof(char), tMain.n, fis);
-		// fclose(fis);
+		Text_write(&tMain, "return 0;\n}\n");
+		FILE *fis = fopen("gen-code/1.c", "w");
+		if (!fis)
+		{
+			ELOG("cannot write to file 'gen-code/1.c'\n");
+			exit(EXIT_FAILURE);
+		}
+
+		fwrite(tBegin.buf, sizeof(char), tBegin.n, fis);
+		fwrite(tFunctions.buf, sizeof(char), tFunctions.n, fis);
+		fwrite(tMain.buf, sizeof(char), tMain.n, fis);
+		fclose(fis);
 		return true;
 	}
 	else if (strcmp(ATOMS_CODE_NAME[tokens[iTk].code], "ID") == 0)
@@ -233,6 +234,8 @@ bool defVar()
 					s->type = ret.type;
 					if (consume(SEMICOLON))
 					{
+						Text_write(crtVar, "%s %s;\n", cType(ret.type), name);
+						ILOG("%s %s;\n", cType(ret.type), name);
 						printf("\n-============ end defVar ===============-\n\n");
 						return true;
 					}
@@ -295,6 +298,12 @@ bool defFunc()
 			crtFn->args = NULL;
 			addDomain();
 
+			crtCode = &tFunctions;
+			crtVar = &tFunctions;
+			Text_clear(&tFnHeader);
+			Text_write(&tFnHeader, "%s(", name);
+			ILOG("%s(", name);
+
 			if (consume(LPAR))
 			{
 				if (funcParams())
@@ -307,6 +316,8 @@ bool defFunc()
 						if (baseType())
 						{
 							crtFn->type = ret.type;
+							Text_write(&tFunctions, "\n%s %s){\n", cType(ret.type), tFnHeader.buf);
+							ILOG("\n%s %s){\n", cType(ret.type), tFnHeader.buf);
 
 							while (defVar())
 							{
@@ -317,6 +328,11 @@ bool defFunc()
 										printf("\n-============ end defFunc ===============-\n\n");
 										delDomain();
 										crtFn = NULL;
+
+										Text_write(&tFunctions, "}\n");
+										crtCode = &tMain;
+										crtVar = &tBegin;
+
 										return true;
 									}
 									else
@@ -333,6 +349,11 @@ bool defFunc()
 									printf("\n-============ end defFunc ===============-\n\n");
 									delDomain();
 									crtFn = NULL;
+
+									Text_write(&tFunctions, "}\n");
+									crtCode = &tMain;
+									crtVar = &tBegin;
+
 									return true;
 								}
 								else
@@ -462,6 +483,7 @@ bool funcParams()
 		{
 			if (consume(COMMA))
 			{
+				Text_write(&tFnHeader, ",");
 				if (funcParam())
 				{
 					start = iTk;
@@ -520,6 +542,8 @@ bool funcParam()
 				printf("\n-============ end funcParam ===============-\n\n");
 				s->type = ret.type;
 				sFnParam->type = ret.type;
+
+				Text_write(&tFnHeader, "%s %s", cType(ret.type), name);
 				return true;
 			}
 		}
@@ -556,6 +580,7 @@ bool instr()
 	{
 		if (consume(LPAR))
 		{
+			Text_write(crtCode, "while(");
 			if (expr())
 			{
 				if (ret.type == TYPE_STR)
@@ -566,10 +591,12 @@ bool instr()
 
 				if (consume(RPAR))
 				{
+					Text_write(crtCode, "){\n");
 					if (block())
 					{
 						if (consume(END))
 						{
+							Text_write(crtCode, "}\n");
 							printf("\n-============ end instr ===============-\n\n");
 							return true;
 						}
@@ -608,6 +635,7 @@ bool instr()
 	{
 		if (consume(LPAR))
 		{
+			Text_write(crtCode, "if(");
 			if (expr())
 			{
 				if (ret.type == TYPE_STR)
@@ -617,12 +645,18 @@ bool instr()
 				}
 				if (consume(RPAR))
 				{
+					Text_write(crtCode, "){\n");
 					if (block())
 					{
+						Text_write(crtCode, "}\n");
+
 						if (consume(ELSE))
 						{
+							Text_write(crtCode, "else{\n");
 							if (block())
 							{
+								Text_write(crtCode, "}\n");
+
 								if (consume(END))
 								{
 									printf("\n-============ end instr ===============-\n\n");
@@ -668,6 +702,7 @@ bool instr()
 
 	if (consume(RETURN))
 	{
+		Text_write(crtCode, "return ");
 		if (expr())
 		{
 			if (!crtFn)
@@ -677,6 +712,7 @@ bool instr()
 
 			if (consume(SEMICOLON))
 			{
+				Text_write(crtCode, ";\n");
 				printf("\n-============ end instr ===============-\n\n");
 				return true;
 			}
@@ -697,6 +733,7 @@ bool instr()
 	{
 		if (consume(SEMICOLON))
 		{
+			Text_write(crtCode, ";\n");
 			printf("\n-============ end instr ===============-\n\n");
 			return true;
 		}
@@ -761,6 +798,8 @@ bool exprLogic()
 				if (leftType.type == TYPE_STR)
 					tkerr("the left operand of && cannot be of type str");
 				ILOG("[AT] left operand has a valid data type '%s'\n", ATOMS_CODE_NAME[leftType.type]);
+				Text_write(crtCode, "&&");
+
 				if (exprAssign())
 				{
 					if (ret.type == TYPE_STR)
@@ -781,6 +820,8 @@ bool exprLogic()
 				if (leftType.type == TYPE_STR)
 					tkerr("the left operand of || cannot be of type str");
 				ILOG("[AT] left operand has a valid data type '%s'\n", ATOMS_CODE_NAME[leftType.type]);
+				Text_write(crtCode, "||");
+
 				if (exprAssign())
 				{
 					if (ret.type == TYPE_STR)
@@ -824,6 +865,7 @@ bool exprAssign()
 		ILOG("[AT] added %s id\n", name);
 		if (consume(ASSIGN))
 		{
+			Text_write(crtCode, "%s=", name);
 			if (exprComp())
 			{
 				Symbol *s = searchSymbol(name);
@@ -876,6 +918,8 @@ bool exprComp()
 		if (consume(LESS))
 		{
 			Ret leftType = ret;
+			Text_write(crtCode, "<");
+
 			if (exprAdd())
 			{
 				if (leftType.type != ret.type)
@@ -894,6 +938,8 @@ bool exprComp()
 		if (consume(EQUAL))
 		{
 			Ret leftType = ret;
+			Text_write(crtCode, "==");
+
 			if (exprAdd())
 			{
 				if (leftType.type != ret.type)
@@ -937,6 +983,8 @@ bool exprAdd()
 				Ret leftType = ret;
 				if (leftType.type == TYPE_STR)
 					tkerr("the operands of + or - cannot be of type str");
+
+				Text_write(crtCode, "+");
 				if (exprMul())
 				{
 					if (leftType.type != ret.type)
@@ -955,6 +1003,8 @@ bool exprAdd()
 				Ret leftType = ret;
 				if (leftType.type == TYPE_STR)
 					tkerr("the operands of + or - cannot be of type str");
+
+				Text_write(crtCode, "-");
 				if (exprMul())
 				{
 					if (leftType.type != ret.type)
@@ -1000,12 +1050,14 @@ bool exprMul()
 			{
 				Ret leftType = ret;
 				if (leftType.type == TYPE_STR)
-					tkerr("the operands of * or / cannot be of type str");
+					tkerr("the operands of * cannot be of type str");
+
+				Text_write(crtCode, "*");
 
 				if (exprPrefix())
 				{
 					if (leftType.type != ret.type)
-						tkerr("different types for the operands of * or /");
+						tkerr("different types for the operands of *");
 					ret.lval = false;
 				}
 				else
@@ -1019,12 +1071,14 @@ bool exprMul()
 			{
 				Ret leftType = ret;
 				if (leftType.type == TYPE_STR)
-					tkerr("the operands of * or / cannot be of type str");
+					tkerr("the operands of / cannot be of type str");
+
+				Text_write(crtCode, "/");
 
 				if (exprPrefix())
 				{
 					if (leftType.type != ret.type)
-						tkerr("different types for the operands of * or /");
+						tkerr("different types for the operands /");
 					ret.lval = false;
 				}
 				else
@@ -1060,6 +1114,8 @@ bool exprPrefix()
 
 	if (consume(SUB))
 	{
+		Text_write(crtCode, "-");
+
 		if (factor())
 		{
 			if (ret.type == TYPE_STR)
@@ -1077,6 +1133,9 @@ bool exprPrefix()
 
 	if (consume(NOT))
 	{
+
+		Text_write(crtCode, "!");
+
 		if (factor())
 		{
 			if (ret.type == TYPE_STR)
@@ -1126,10 +1185,11 @@ bool factor()
 
 	if (consume(LPAR))
 	{
-		if (expr())
+		Text_write(crtCode, "(");
 		{
 			if (consume(RPAR))
 			{
+				Text_write(crtCode, ")");
 				printf("\n-============ end factor ===============-\n\n");
 				return true;
 			}
@@ -1142,11 +1202,15 @@ bool factor()
 		if (!s)
 			tkerr("undefined symbol: %s", consumed->text);
 
+		Text_write(crtCode, "%s", s->name);
+
 		if (consume(LPAR))
 		{
 			if (s->kind != KIND_FN)
 				tkerr("%s cannot be called, because it is not a function", s->name);
 			Symbol *argDef = s->args;
+
+			Text_write(crtCode, "(");
 
 			if (expr())
 			{
@@ -1158,6 +1222,8 @@ bool factor()
 
 				while (consume(COMMA))
 				{
+					Text_write(crtCode, ",");
+
 					if (expr())
 					{
 						if (!argDef)
@@ -1184,6 +1250,7 @@ bool factor()
 					if (argDef)
 						tkerr("the function %s is called with too few arguments", s->name);
 					setRet(s->type, false);
+					Text_write(crtCode, ")");
 					printf("\n-============ end factor ===============-\n\n");
 					return true;
 				}
@@ -1203,6 +1270,7 @@ bool factor()
 				if (argDef)
 					tkerr("the function %s is called with too few arguments", s->name);
 				setRet(s->type, false);
+				Text_write(crtCode, ")");
 				printf("\n-============ end factor ===============-\n\n");
 				return true;
 			}
@@ -1222,6 +1290,7 @@ bool factor()
 	{
 		setRet(TYPE_INT, false);
 		ILOG("[AT] assign int '%d' as a right operand.\n", tokens[iTk].i);
+		Text_write(crtCode, "%d", consumed->i);
 		printf("\n-============ end factor ===============-\n\n");
 		return true;
 	}
@@ -1230,6 +1299,7 @@ bool factor()
 	{
 		setRet(TYPE_REAL, false);
 		ILOG("[AT] assign real '%f' as a right operand.\n", tokens[iTk].r);
+		Text_write(crtCode, "%g", consumed->r);
 		printf("\n-============ end factor ===============-\n\n");
 		return true;
 	}
@@ -1238,6 +1308,7 @@ bool factor()
 	{
 		setRet(TYPE_STR, false);
 		ILOG("[AT] assign str '%s' as a right operand.\n", tokens[iTk].text);
+		Text_write(crtCode, "\"%s\"", consumed->text);
 		printf("\n-============ end factor ===============-\n\n");
 		return true;
 	}

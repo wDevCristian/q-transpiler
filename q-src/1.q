@@ -18,3 +18,6 @@ while (i < 10)
 
 puts("PI=");
 putr(3.14159);
+
+puts("Here is some amazing text.\n");
+puts("Here is another amazing text.\n");

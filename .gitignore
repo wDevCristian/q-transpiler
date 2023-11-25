@@ -1,5 +1,10 @@
-*.o
-build 
 .vscode
-test-src.q
+
+*.o
 *log*
+
+build
+builgen
+
+gen-code/**
+!gen-code/quick.h 
