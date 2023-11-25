@@ -51,43 +51,45 @@ enum Atoms
 
 /**
  * @brief get atoms code name as a STRING by it's code
-*/
-#define ATOMS_CODE_NAME (const char*[]){  \
-	"ID",  											\
-	"VAR", 											\
-	"FUNCTION",										\
-	"IF",												\
-	"ELSE",											\
-	"WHILE",											\
-	"END",											\
-	"RETURN",										\
-	"TYPE_INT",										\
-	"TYPE_REAL",									\
-	"TYPE_STR",										\
-	"INT",											\
-	"REAL",											\
-	"STR",											\
-	"COMMA",											\
-	"COLON",											\
-	"SEMICOLON",									\
-	"LPAR",											\
-	"RPAR",											\
-	"FINISH",										\
-	"ADD",											\
-	"SUB",											\
-	"MUL",											\
-	"DIV",											\
-	"AND",											\
-	"OR",												\
-	"NOT",											\
-	"ASSIGN",										\
-	"EQUAL",											\
-	"NOTEQ",											\
-	"LESS",											\
-	"LESSEQ",										\
-	"GREATER",										\
-	"GREATERQ"										\
-}
+ */
+#define ATOMS_CODE_NAME \
+	(const char *[])     \
+	{                    \
+		"ID",             \
+			 "VAR",        \
+			 "FUNCTION",   \
+			 "IF",         \
+			 "ELSE",       \
+			 "WHILE",      \
+			 "END",        \
+			 "RETURN",     \
+			 "TYPE_INT",   \
+			 "TYPE_REAL",  \
+			 "TYPE_STR",   \
+			 "INT",        \
+			 "REAL",       \
+			 "STR",        \
+			 "COMMA",      \
+			 "COLON",      \
+			 "SEMICOLON",  \
+			 "LPAR",       \
+			 "RPAR",       \
+			 "FINISH",     \
+			 "ADD",        \
+			 "SUB",        \
+			 "MUL",        \
+			 "DIV",        \
+			 "AND",        \
+			 "OR",         \
+			 "NOT",        \
+			 "ASSIGN",     \
+			 "EQUAL",      \
+			 "NOTEQ",      \
+			 "LESS",       \
+			 "LESSEQ",     \
+			 "GREATER",    \
+			 "GREATERQ"    \
+	}
 
 #define MAX_STR 127
 
@@ -98,8 +100,8 @@ typedef struct
 	union
 	{
 		char text[MAX_STR + 1]; // the chars for ID, STR
-		int i;					// the value for INT
-		double r;				// the value for REAL
+		int i;						// the value for INT
+		double r;					// the value for REAL
 	};
 } Token;
 

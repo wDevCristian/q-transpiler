@@ -8,11 +8,14 @@
 
 #ifdef __LOG_FILE
 #define INFO "INFO"
+#define ERROR "ERROR"
 #else
 #define INFO "\033[1;49;97mINFO\033[0m"
+#define ERROR "\033[1;49;91mERROR\033[0m"
 #endif
 
 #define ILOG(fmt, ...) fprintf(stdout, "[" INFO "][%s] %s:%d - " fmt, getCurrentDateTime(), __FILE__, __LINE__, ##__VA_ARGS__)
+#define ELOG(fmt, ...) fprintf(stdout, "[" ERROR "][%s] %s:%d - " fmt, getCurrentDateTime(), __FILE__, __LINE__, ##__VA_ARGS__)
 
 // ********************* logging message *******************
 

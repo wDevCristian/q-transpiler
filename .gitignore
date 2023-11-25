@@ -2,4 +2,4 @@
 build 
 .vscode
 test-src.q
-*.log
+*log*

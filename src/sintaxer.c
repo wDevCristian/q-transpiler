@@ -15,6 +15,8 @@
 #include "lexer.h"
 #include "ad.h"
 #include "utils.h"
+#include "at.h"
+#include "gen.h"
 
 /** short version of @code unsigned short int @endcode */
 #define USINT unsigned short int;
@@ -24,22 +26,22 @@ Token *consumed; // the last consumed token
 
 /* Declaration of all functions used in program() */
 
-bool factor();
-bool exprPrefix();
-bool exprMul();
-bool exprAdd();
-bool exprComp();
-bool exprAssign();
-bool exprLogic();
-bool expr();
-bool instr();
-bool funcParam();
-bool funcParams();
-bool block();
-bool defFunc();
-bool baseType();
-bool defVar();
-bool program();
+bool factor(void);
+bool exprPrefix(void);
+bool exprMul(void);
+bool exprAdd(void);
+bool exprComp(void);
+bool exprAssign(void);
+bool exprLogic(void);
+bool expr(void);
+bool instr(void);
+bool funcParam(void);
+bool funcParams(void);
+bool block(void);
+bool defFunc(void);
+bool baseType(void);
+bool defVar(void);
+bool program(void);
 
 /**
  * @brief same as err, but also prints the line of the current token
@@ -83,7 +85,7 @@ bool consume(int code)
 
 /**
  * @brief Starts the syntactic analyser
- * @note Call this function to start SA
+ * @note Call this function to start Syntactic Analyser
  */
 void parse()
 {
@@ -104,6 +106,12 @@ bool program()
 
 	addDomain();
 	ILOG("Added new domain.\n");
+	addPredefinedFns();
+	ILOG("Added predefined funtions.\n");
+	// crtCode = &tMain;
+	// crtVar = &tBegin;
+	// Text_write(&tBegin, "#include \"quick.h\"\n\n");
+	// Text_write(&tMain, "\nint main(){\n");
 
 	for (;;)
 	{
@@ -113,6 +121,17 @@ bool program()
 			{
 				printf("\n-============ end program ===============-\n\n");
 				delDomain();
+				// Text_write(&tMain, "return 0;\n}\n");
+				// FILE *fis = fopen("1.c", "w");
+				// if (!fis)
+				// {
+				// 	printf("cannot write to file 1.c\n");
+				// 	exit(EXIT_FAILURE);
+				// }
+				// fwrite(tBegin.buf, sizeof(char), tBegin.n, fis);
+				// fwrite(tFunctions.buf, sizeof(char), tFunctions.n, fis);
+				// fwrite(tMain.buf, sizeof(char), tMain.n, fis);
+				// fclose(fis);
 				return true;
 			}
 		}
@@ -122,6 +141,17 @@ bool program()
 			{
 				printf("\n-============ end program ===============-\n\n");
 				delDomain();
+				// Text_write(&tMain, "return 0;\n}\n");
+				// FILE *fis = fopen("1.c", "w");
+				// if (!fis)
+				// {
+				// 	printf("cannot write to file 1.c\n");
+				// 	exit(EXIT_FAILURE);
+				// }
+				// fwrite(tBegin.buf, sizeof(char), tBegin.n, fis);
+				// fwrite(tFunctions.buf, sizeof(char), tFunctions.n, fis);
+				// fwrite(tMain.buf, sizeof(char), tMain.n, fis);
+				// fclose(fis);
 				return true;
 			}
 		}
@@ -131,6 +161,17 @@ bool program()
 			{
 				printf("\n-============ end program ===============-\n\n");
 				delDomain();
+				// Text_write(&tMain, "return 0;\n}\n");
+				// FILE *fis = fopen("1.c", "w");
+				// if (!fis)
+				// {
+				// 	printf("cannot write to file 1.c\n");
+				// 	exit(EXIT_FAILURE);
+				// }
+				// fwrite(tBegin.buf, sizeof(char), tBegin.n, fis);
+				// fwrite(tFunctions.buf, sizeof(char), tFunctions.n, fis);
+				// fwrite(tMain.buf, sizeof(char), tMain.n, fis);
+				// fclose(fis);
 				return true;
 			}
 		}
@@ -141,6 +182,17 @@ bool program()
 	{
 		printf("\n-============ end program ===============-\n\n");
 		delDomain();
+		// Text_write(&tMain, "return 0;\n}\n");
+		// FILE *fis = fopen("1.c", "w");
+		// if (!fis)
+		// {
+		// 	printf("cannot write to file 1.c\n");
+		// 	exit(EXIT_FAILURE);
+		// }
+		// fwrite(tBegin.buf, sizeof(char), tBegin.n, fis);
+		// fwrite(tFunctions.buf, sizeof(char), tFunctions.n, fis);
+		// fwrite(tMain.buf, sizeof(char), tMain.n, fis);
+		// fclose(fis);
 		return true;
 	}
 	else if (strcmp(ATOMS_CODE_NAME[tokens[iTk].code], "ID") == 0)
@@ -168,7 +220,10 @@ bool defVar()
 			const char *name = consumed->text;
 			Symbol *s = searchInCurrentDomain(name);
 			if (s)
+			{
+				ELOG("symbol redefinition: %s\n", name);
 				tkerr("symbol redefinition: %s", name);
+			}
 			s = addSymbol(name, KIND_VAR);
 			s->local = crtFn != NULL;
 			if (consume(COLON))
@@ -232,7 +287,10 @@ bool defFunc()
 			const char *name = consumed->text;
 			Symbol *s = searchInCurrentDomain(name);
 			if (s)
+			{
+				ELOG("symbol redefinition: %s", name);
 				tkerr("symbol redefinition: %s", name);
+			}
 			crtFn = addSymbol(name, KIND_FN);
 			crtFn->args = NULL;
 			addDomain();
@@ -448,7 +506,10 @@ bool funcParam()
 		const char *name = consumed->text;
 		Symbol *s = searchInCurrentDomain(name);
 		if (s)
+		{
+			ELOG("symbol redefinition: %s", name);
 			tkerr("symbol redefinition: %s", name);
+		}
 		s = addSymbol(name, KIND_ARG);
 		Symbol *sFnParam = addFnArg(crtFn, name);
 
@@ -497,6 +558,12 @@ bool instr()
 		{
 			if (expr())
 			{
+				if (ret.type == TYPE_STR)
+				{
+					ELOG("WHILE condition must have TYPE_INT or TYPE_REAL\n");
+					tkerr("the while condition must have type int or real");
+				}
+
 				if (consume(RPAR))
 				{
 					if (block())
@@ -543,6 +610,11 @@ bool instr()
 		{
 			if (expr())
 			{
+				if (ret.type == TYPE_STR)
+				{
+					ELOG("IF cond myst have TYPE_INT or TYPE_REAL\n");
+					tkerr("the if condition must have type int or real");
+				}
 				if (consume(RPAR))
 				{
 					if (block())
@@ -598,6 +670,11 @@ bool instr()
 	{
 		if (expr())
 		{
+			if (!crtFn)
+				tkerr("return can be used only in a function");
+			if (ret.type != crtFn->type)
+				tkerr("the return type must be the same as the function return type");
+
 			if (consume(SEMICOLON))
 			{
 				printf("\n-============ end instr ===============-\n\n");
@@ -680,8 +757,16 @@ bool exprLogic()
 		{
 			if (consume(AND))
 			{
+				Ret leftType = ret;
+				if (leftType.type == TYPE_STR)
+					tkerr("the left operand of && cannot be of type str");
+				ILOG("[AT] left operand has a valid data type '%s'\n", ATOMS_CODE_NAME[leftType.type]);
 				if (exprAssign())
 				{
+					if (ret.type == TYPE_STR)
+						tkerr("the right operand of && cannot be of type str");
+					setRet(TYPE_INT, false);
+					ILOG("[AT] right operand has a valid data type '%s'\n", ATOMS_CODE_NAME[leftType.type]);
 				}
 				else
 				{
@@ -692,8 +777,16 @@ bool exprLogic()
 
 			if (consume(OR))
 			{
+				Ret leftType = ret;
+				if (leftType.type == TYPE_STR)
+					tkerr("the left operand of || cannot be of type str");
+				ILOG("[AT] left operand has a valid data type '%s'\n", ATOMS_CODE_NAME[leftType.type]);
 				if (exprAssign())
 				{
+					if (ret.type == TYPE_STR)
+						tkerr("the right operand of || cannot be of type str");
+					ILOG("[AT] right operand has a valid data type '%s'\n", ATOMS_CODE_NAME[leftType.type]);
+					setRet(TYPE_INT, false);
 				}
 				else
 				{
@@ -727,10 +820,21 @@ bool exprAssign()
 
 	if (consume(ID))
 	{
+		const char *name = consumed->text;
+		ILOG("[AT] added %s id\n", name);
 		if (consume(ASSIGN))
 		{
 			if (exprComp())
 			{
+				Symbol *s = searchSymbol(name);
+				if (!s)
+					tkerr("undefined symbol: %s", name);
+				if (s->kind == KIND_FN)
+					tkerr("a function (%s) cannot be used as a destination for assignment ", name);
+				if (s->type != ret.type)
+					tkerr("the source and destination for assignment must have the same type");
+				ret.lval = false;
+				ILOG("[AT] found valid symbol %s\n", name);
 				printf("\n-============ end exprAssign ===============-\n\n");
 				return true;
 			}
@@ -771,8 +875,12 @@ bool exprComp()
 	{
 		if (consume(LESS))
 		{
+			Ret leftType = ret;
 			if (exprAdd())
 			{
+				if (leftType.type != ret.type)
+					tkerr("different types for the operands of <");
+				setRet(TYPE_INT, false); // the result of comparation is int 0 or 1
 				printf("\n-============ end exprComp ===============-\n\n");
 				return true;
 			}
@@ -785,8 +893,12 @@ bool exprComp()
 
 		if (consume(EQUAL))
 		{
+			Ret leftType = ret;
 			if (exprAdd())
 			{
+				if (leftType.type != ret.type)
+					tkerr("different types for the operands of ==");
+				setRet(TYPE_INT, false); // the result of comparation is int 0 or 1
 				printf("\n-============ end exprComp ===============-\n\n");
 				return true;
 			}
@@ -822,8 +934,14 @@ bool exprAdd()
 
 			if (consume(ADD))
 			{
+				Ret leftType = ret;
+				if (leftType.type == TYPE_STR)
+					tkerr("the operands of + or - cannot be of type str");
 				if (exprMul())
 				{
+					if (leftType.type != ret.type)
+						tkerr("different types for the operands of +");
+					ret.lval = false;
 				}
 				else
 				{
@@ -834,8 +952,14 @@ bool exprAdd()
 
 			if (consume(SUB))
 			{
+				Ret leftType = ret;
+				if (leftType.type == TYPE_STR)
+					tkerr("the operands of + or - cannot be of type str");
 				if (exprMul())
 				{
+					if (leftType.type != ret.type)
+						tkerr("different types for the operands of -");
+					ret.lval = false;
 				}
 				else
 				{
@@ -874,8 +998,15 @@ bool exprMul()
 		{
 			if (consume(MUL))
 			{
+				Ret leftType = ret;
+				if (leftType.type == TYPE_STR)
+					tkerr("the operands of * or / cannot be of type str");
+
 				if (exprPrefix())
 				{
+					if (leftType.type != ret.type)
+						tkerr("different types for the operands of * or /");
+					ret.lval = false;
 				}
 				else
 				{
@@ -886,8 +1017,15 @@ bool exprMul()
 
 			if (consume(DIV))
 			{
+				Ret leftType = ret;
+				if (leftType.type == TYPE_STR)
+					tkerr("the operands of * or / cannot be of type str");
+
 				if (exprPrefix())
 				{
+					if (leftType.type != ret.type)
+						tkerr("different types for the operands of * or /");
+					ret.lval = false;
 				}
 				else
 				{
@@ -920,17 +1058,37 @@ bool exprPrefix()
 
 	int start = iTk;
 
-	if (consume(SUB) || consume(NOT))
+	if (consume(SUB))
 	{
 		if (factor())
 		{
+			if (ret.type == TYPE_STR)
+				tkerr("the expression of unary - must be of type int or real");
+			ret.lval = false;
 			printf("\n-============ end exprPrefix ===============-\n\n");
 			return true;
 		}
 		else
 		{
 			printf("iTk = %d\n", iTk);
-			tkerr("missing right side operand for the 'SUB' or 'NOT' operator\n");
+			tkerr("missing right side operand for the 'SUB'  operator\n");
+		}
+	}
+
+	if (consume(NOT))
+	{
+		if (factor())
+		{
+			if (ret.type == TYPE_STR)
+				tkerr("the expression of ! must be of type int or real");
+			setRet(TYPE_INT, false);
+			printf("\n-============ end exprPrefix ===============-\n\n");
+			return true;
+		}
+		else
+		{
+			printf("iTk = %d\n", iTk);
+			tkerr("missing right side operand for the 'NOT'  operator\n");
 		}
 	}
 
@@ -957,6 +1115,9 @@ ID LPAR RPAR
 ID LPAR EXPR RPAR
 ID LPAR EXPR (COMMA EXPR)* RPAR
 */
+
+// ! TODO: implement types analyzer for factor function
+
 bool factor()
 {
 	printf("\n-============ factor ===============-\n\n");
@@ -977,14 +1138,33 @@ bool factor()
 
 	if (consume(ID))
 	{
+		Symbol *s = searchSymbol(consumed->text);
+		if (!s)
+			tkerr("undefined symbol: %s", consumed->text);
+
 		if (consume(LPAR))
 		{
+			if (s->kind != KIND_FN)
+				tkerr("%s cannot be called, because it is not a function", s->name);
+			Symbol *argDef = s->args;
+
 			if (expr())
 			{
+				if (!argDef)
+					tkerr("the function %s is called with too many arguments", s->name);
+				if (argDef->type != ret.type)
+					tkerr("the argument type at function %s call is different from the one given at its definition", s->name);
+				argDef = argDef->next;
+
 				while (consume(COMMA))
 				{
 					if (expr())
 					{
+						if (!argDef)
+							tkerr("the function %s is called with too many arguments", s->name);
+						if (argDef->type != ret.type)
+							tkerr("the argument type at function %s call is different from the one given at its definition", s->name);
+						argDef = argDef->next;
 					}
 					else
 					{
@@ -1001,23 +1181,36 @@ bool factor()
 
 				if (consume(RPAR))
 				{
+					if (argDef)
+						tkerr("the function %s is called with too few arguments", s->name);
+					setRet(s->type, false);
 					printf("\n-============ end factor ===============-\n\n");
 					return true;
 				}
 				else
 				{
+					if (s->kind == KIND_FN)
+						tkerr("the function %s can only be called", s->name);
+					setRet(s->type, true);
+
 					printf("iTk = %d\n", iTk);
 					tkerr("missing token ')', after expr\n");
 				}
-
-				// printf("\n-============ end factor ===============-\n\n");
-				// return false;
 			}
 
 			if (consume(RPAR))
 			{
+				if (argDef)
+					tkerr("the function %s is called with too few arguments", s->name);
+				setRet(s->type, false);
 				printf("\n-============ end factor ===============-\n\n");
 				return true;
+			}
+			else
+			{
+				if (s->kind == KIND_FN)
+					tkerr("the function %s can only be called", s->name);
+				setRet(s->type, true);
 			}
 		}
 
@@ -1025,8 +1218,26 @@ bool factor()
 		return true;
 	}
 
-	if (consume(INT) || consume(REAL) || consume(STR))
+	if (consume(INT))
 	{
+		setRet(TYPE_INT, false);
+		ILOG("[AT] assign int '%d' as a right operand.\n", tokens[iTk].i);
+		printf("\n-============ end factor ===============-\n\n");
+		return true;
+	}
+
+	if (consume(REAL))
+	{
+		setRet(TYPE_REAL, false);
+		ILOG("[AT] assign real '%f' as a right operand.\n", tokens[iTk].r);
+		printf("\n-============ end factor ===============-\n\n");
+		return true;
+	}
+
+	if (consume(STR))
+	{
+		setRet(TYPE_STR, false);
+		ILOG("[AT] assign str '%s' as a right operand.\n", tokens[iTk].text);
 		printf("\n-============ end factor ===============-\n\n");
 		return true;
 	}
